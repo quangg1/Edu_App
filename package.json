@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "prebuild": "npm install next-themes sonner date-fns",
     "dev": "vite",
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
@@ -39,6 +40,7 @@
     "@tanstack/react-query": "^5.90.5",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
     "express": "^5.1.0",
     "framer-motion": "^12.23.24",
     "lucide-react": "^0.378.0",
@@ -54,6 +56,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
+    "@types/node": "^20.8.2",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@types/react-katex": "^3.0.4",

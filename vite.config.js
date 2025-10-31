@@ -10,7 +10,9 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
         ws: true,
-        rewrite: (path: string) => path.replace(/^\/api/, ""),
+        // ❌ Sai: (path: string)
+        // ✅ Đúng:
+        rewrite: (path) => path.replace(/^\/api/, ""),
       },
     },
     fs: {

@@ -127,7 +127,7 @@ const TestDialog = ({ open, onOpenChange }: { open: boolean; onOpenChange: (open
   const isStep1Valid = !!formData.file || formData.text_content.trim().length > 0;
 
   // --- Hàm gọi API ---
-  const FRONTEND_API = import.meta.env.VITE_API_BASE_URL;
+  const FRONTEND_API = "https://gemini.veronlabs.com/bot5"
   
   const handleGenerate = async () => {
     if (!isStep1Valid) {

@@ -351,14 +351,14 @@ const LessonPlanDialog = ({ open, onOpenChange, selectedMethod }: LessonPlanDial
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl sm:max-w-6xl h-[90vh] flex flex-col">
+            <DialogContent className="max-w-5xl max-h-[90vh] p-0 gap-0 flex flex-col overflow-hidden">
                 <DialogHeader>
                     <DialogTitle>
                         {formData.type === 'kindergarten' ? 'Tạo Kế hoạch Hoạt động' : 'Tạo Giáo án / Tài liệu'}
                     </DialogTitle>
                 </DialogHeader>
                 
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex-1 min-h-0 flex flex-col">
                     <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger value="form" disabled={isGenerating}>Nhập Liệu</TabsTrigger>
                         <TabsTrigger value="result" disabled={!streamOutput && !isGenerating}>
@@ -366,8 +366,8 @@ const LessonPlanDialog = ({ open, onOpenChange, selectedMethod }: LessonPlanDial
                         </TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="form">
-                        <form onSubmit={handleFormSubmit} className="space-y-4 pt-4">
+                    <TabsContent value="form" className="flex-1 min-h-0 overflow-y-auto">
+                        <form onSubmit={handleFormSubmit} className="space-y-4 pt-4 px-4 pb-6">
                         <div className="space-y-4">
                         {/* Loại giáo án */}
                         <div className="space-y-2">

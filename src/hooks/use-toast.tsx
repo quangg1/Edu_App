@@ -132,9 +132,9 @@ function dispatch(action: Action) {
   });
 }
 
-type Toast = Omit<ToasterToast, "id">;
+type PublicToast = Omit<ToasterToast, "id" | "onOpenChange" | "open">;
 
-function toast({ ...props }: Toast) {
+function toast({ ...props }: PublicToast) {
   const id = genId();
 
   const update = (props: ToasterToast) =>

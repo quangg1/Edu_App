@@ -197,9 +197,9 @@ const RubricDialog = ({ open, onOpenChange, onRubricCreated }: RubricDialogProps
 
     switch (eventType) {
       case 'status': {
-        if (typeof data === 'object' && data.message) {
-          setStreamOutput(prev => prev + `\n[Trạng thái] ${data.message}\n`);
-          setStreamProgress(prev => ({ ...prev, currentStep: data.message }));
+        if (typeof data === 'object' && (data as any).message) {
+          setStreamOutput(prev => prev + `\n[Trạng thái] ${(data as any).message}\n`);
+          setStreamProgress(prev => ({ ...prev, currentStep: (data as any).message }));
         }
         break;
       }
@@ -217,7 +217,7 @@ const RubricDialog = ({ open, onOpenChange, onRubricCreated }: RubricDialogProps
       }
       case 'download_url': {
         const downloadUrl = typeof data === 'string' ? data : 
-                          (typeof data === 'object' && data?.url) ? data.url : null;
+                          (typeof data === 'object' && (data as any)?.url) ? (data as any).url : null;
         
         if (downloadUrl) {
           const token = downloadUrl.split('/').pop();
@@ -244,7 +244,7 @@ const RubricDialog = ({ open, onOpenChange, onRubricCreated }: RubricDialogProps
                 })),
                 rubricTable: [],
                 studentResults: [],
-                criteriaCount: finalRubricDataRef.current.criteria.length,
+                criteriaCount: finalRubricDataRef.current.criteria?.length || 0,
                 statistics: {
                   averageScore: 0,
                   highestScore: 0,
@@ -255,11 +255,7 @@ const RubricDialog = ({ open, onOpenChange, onRubricCreated }: RubricDialogProps
               onRubricCreated(newRubric);
             }
 
-            toast({
-              title: "Thành công",
-              description: "Đã tạo Rubric thành công!",
-              variant: "default"
-            });
+            toast({ title: "Thành công", description: "Đã tạo Rubric thành công!", variant: "default" });
           }
         }
         break;
@@ -268,7 +264,7 @@ const RubricDialog = ({ open, onOpenChange, onRubricCreated }: RubricDialogProps
         if (typeof data === 'object') {
           toast({ 
             title: "Lỗi Stream", 
-            description: data.message || "Đã xảy ra lỗi không xác định.", 
+            description: (data as any).message || "Đã xảy ra lỗi không xác định.", 
             variant: "destructive" 
           });
           setIsGenerating(false);
@@ -379,11 +375,7 @@ const RubricDialog = ({ open, onOpenChange, onRubricCreated }: RubricDialogProps
       // Clean up the stream state and toast success if we received criteria
       if (!abortControllerRef.current) {
         if (finalRubricDataRef.current.criteria?.length) {
-          toast({
-            title: "Hoàn thành",
-            description: "Đã tạo Rubrics thành công!",
-            variant: "success"
-          });
+          toast({ title: "Hoàn thành", description: "Đã tạo Rubrics thành công!", variant: "default" });
         }
       }
       abortControllerRef.current = null;
@@ -436,7 +428,7 @@ const RubricDialog = ({ open, onOpenChange, onRubricCreated }: RubricDialogProps
         ))}
 
         {/* Table View of Criteria */}
-        {finalRubricDataRef.current.criteria?.length > 0 && (
+        {(finalRubricDataRef.current.criteria?.length ?? 0) > 0 && (
           <div className="mt-8 overflow-x-auto rounded-lg border bg-card">
             <table className="w-full text-sm">
               <thead>
@@ -487,12 +479,12 @@ const RubricDialog = ({ open, onOpenChange, onRubricCreated }: RubricDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl sm:max-w-6xl h-[90vh] flex flex-col">
+      <DialogContent className="max-w-5xl max-h-[90vh] p-0 gap-0 flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>Tạo Rubrics tự động bằng AI</DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="form" value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+        <Tabs defaultValue="form" value={activeTab} onValueChange={setActiveTab} className="flex-1 min-h-0 flex flex-col">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="form" disabled={isGenerating && !downloadToken}>
               Nhập Liệu
@@ -502,8 +494,8 @@ const RubricDialog = ({ open, onOpenChange, onRubricCreated }: RubricDialogProps
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="form" className="flex-1 overflow-auto">
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <TabsContent value="form" className="flex-1 min-h-0 overflow-y-auto">
+            <form onSubmit={handleSubmit} className="space-y-4 px-4 pb-6 pt-4">
         <div className="space-y-2">
             <Label htmlFor="title">Tiêu đề Rubrics <span className="text-red-500">*</span></Label>
             <Input

@@ -1,9 +1,7 @@
 import { ReactNode, useState } from "react";
 import { BookOpen, FileText, Target, GraduationCap } from "lucide-react";
 import { NavLink } from "react-router-dom";
-import { Avatar, AvatarFallback } from "../components/ui/avatar";
 import NotificationsSheet from "../components/NotificationsSheet";
-import { Header } from "./components/Header";
 
 interface DashboardLayoutProps {
   children: ReactNode;

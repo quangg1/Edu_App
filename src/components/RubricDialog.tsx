@@ -448,7 +448,7 @@ const RubricDialog = ({ open, onOpenChange, onRubricCreated }: RubricDialogProps
                 <tr className="border-b bg-muted/30">
                   <th className="p-4"></th>
                   <th className="p-4"></th>
-                  {finalRubricDataRef.current.criteria[0]?.levels?.map((level, idx) => (
+                  { (finalRubricDataRef.current.criteria?.[0]?.levels ?? []).map((level, idx) => (
                     <th key={idx} className="p-4 text-center font-medium text-muted-foreground whitespace-nowrap">
                       {level.label}
                       <div className="text-xs text-primary/70">{level.score_range} điểm</div>
@@ -457,7 +457,7 @@ const RubricDialog = ({ open, onOpenChange, onRubricCreated }: RubricDialogProps
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {finalRubricDataRef.current.criteria.map((c, index) => (
+                {(finalRubricDataRef.current.criteria ?? []).map((c, index) => (
                   <tr key={`table-${index}`} className="hover:bg-muted/30 transition-colors">
                     <td className="p-4">
                       <div className="flex items-center gap-2">

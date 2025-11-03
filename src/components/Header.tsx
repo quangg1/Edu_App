@@ -18,6 +18,7 @@ const Header: React.FC = () => {
   const [notifications, setNotifications] = useState([
     {
       id: "1",
+      type: "lesson" as const,
       title: "Giáo án mới đã được tạo",
       message: "Giáo án 'Phương trình bậc hai' đã được AI tạo thành công",
       timestamp: new Date(Date.now() - 1000 * 60 * 5),

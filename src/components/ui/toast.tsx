@@ -3,11 +3,9 @@ import * as React from 'react';
 // --- 0. Types ---
 type ToastVariant = 'default' | 'destructive';
 
-export interface ToastActionElement extends React.ElementRef<'button'> {
-  type: 'action';
-}
+export type ToastActionElement = React.ReactNode;
 
-export interface ToastProps extends React.HTMLAttributes<HTMLLIElement> {
+export interface ToastProps extends Omit<React.HTMLAttributes<HTMLLIElement>, 'title'> {
   id: string;
   title?: React.ReactNode;
   description?: React.ReactNode;

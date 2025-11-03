@@ -1,16 +1,20 @@
-import { useState } from 'react';
+import { Dispatch, SetStateAction } from 'react';
 import RubricDialog from './RubricDialog';
 import { useRubricCreation } from '../hooks/useRubricCreation';
 
-export const RubricCreationDialog = () => {
-    const [isOpen, setIsOpen] = useState(false);
+interface RubricCreationDialogProps {
+    open: boolean;
+    onOpenChange: Dispatch<SetStateAction<boolean>>;
+}
+
+export const RubricCreationDialog = ({ open, onOpenChange }: RubricCreationDialogProps) => {
     const { handleRubricCreation } = useRubricCreation();
 
     return (
         <RubricDialog 
-            open={isOpen}
-            onOpenChange={setIsOpen}
-            onStreamStartNavigate={handleRubricCreation}
+            open={open}
+            onOpenChange={onOpenChange}
+            onRubricCreated={handleRubricCreation}
         />
     );
 };

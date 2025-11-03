@@ -2,56 +2,6 @@
 import { logout } from './tokenUtils'; 
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || '600000');
-
-export const fetchClient = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: API_TIMEOUT,
-  headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-  },
-  withCredentials: true // Quan trọng cho CORS với credentials
-});
-
-// Add a request interceptor
-fetchClient.interceptors.request.use(
-  (config) => {
-    // Get token from localStorage
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Add a response interceptor
-fetchClient.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  async (error) => {
-    if (error.response) {
-      // Handle 401 Unauthorized
-      if (error.response.status === 401) {
-        localStorage.removeItem('token');
-        window.location.href = '/login';
-      }
-      // Handle other status codes
-      return Promise.reject(error.response.data);
-    }
-    if (error.code === 'ECONNABORTED') {
-      return Promise.reject({
-        message: 'Request timeout - Vui lòng thử lại sau'
-      });
-    }
-    return Promise.reject(error);
-  }
-});
 
 export const fetchClient = async (endpoint, options = {}) => {
     const url = `${API_BASE_URL}${endpoint}`;

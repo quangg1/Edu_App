@@ -1,0 +1,513 @@
+{
+  "meta": {
+    "font_name": "Times New Roman",
+    "font_size": 12
+  },
+  "step": [
+    {
+      "tool": "add_para",
+      "args": {
+        "text": [
+          {
+            "text": "GIÁO ÁN BÀI: PHÂN THỨC ĐẠI SỐ (LỚP 10)",
+            "bold": true
+          }
+        ],
+        "align": "center",
+        "space_after": 12
+      }
+    },
+    {
+      "tool": "add_para",
+      "args": {
+        "text": [
+          {
+            "text": "I. THÔNG TIN CHUNG",
+            "bold": true
+          }
+        ],
+        "space_before": 12
+      }
+    },
+    {
+      "tool": "add_items",
+      "args": {
+        "items": [
+          [
+            {
+              "text": "Tên bài học: Phân thức đại số"
+            }
+          ],
+          [
+            {
+              "text": "Môn học: Toán"
+            }
+          ],
+          [
+            {
+              "text": "Lớp: 10"
+            }
+          ],
+          [
+            {
+              "text": "Thời lượng: 2 tiết"
+            }
+          ]
+        ],
+        "bullet": "•"
+      }
+    },
+    {
+      "tool": "add_para",
+      "args": {
+        "text": [
+          {
+            "text": "II. MỤC TIÊU BÀI HỌC",
+            "bold": true
+          }
+        ],
+        "space_before": 12
+      }
+    },
+    {
+      "tool": "add_items",
+      "args": {
+        "items": [
+          [
+            {
+              "text": "Kiến thức:",
+              "bold": true
+            }
+          ],
+          [
+            {
+              "text": "Nắm vững khái niệm phân thức đại số, điều kiện xác định của phân thức."
+            }
+          ],
+          [
+            {
+              "text": "Biết cách tìm điều kiện xác định của một phân thức."
+            }
+          ],
+          [
+            {
+              "text": "Hiểu và thực hiện được phép rút gọn phân thức."
+            }
+          ],
+          [
+            {
+              "text": "Nắm vững các quy tắc cộng, trừ, nhân, chia phân thức và biết cách áp dụng."
+            }
+          ],
+          [
+            {
+              "text": "Kỹ năng:",
+              "bold": true
+            }
+          ],
+          [
+            {
+              "text": "Thực hiện thành thạo việc tìm điều kiện xác định."
+            }
+          ],
+          [
+            {
+              "text": "Rút gọn phân thức đúng cách."
+            }
+          ],
+          [
+            {
+              "text": "Thực hiện các phép tính cộng, trừ, nhân, chia phân thức một cách chính xác."
+            }
+          ],
+          [
+            {
+              "text": "Vận dụng giải các bài toán liên quan đến phân thức đại số."
+            }
+          ],
+          [
+            {
+              "text": "Thái độ:",
+              "bold": true
+            }
+          ],
+          [
+            {
+              "text": "Nghiêm túc, tích cực trong học tập."
+            }
+          ],
+          [
+            {
+              "text": "Có tinh thần hợp tác, làm việc nhóm."
+            }
+          ],
+          [
+            {
+              "text": "Cẩn thận, chính xác khi giải bài tập."
+            }
+          ]
+        ],
+        "bullet": "•"
+      }
+    },
+    {
+      "tool": "add_para",
+      "args": {
+        "text": [
+          {
+            "text": "III. CHUẨN BỊ",
+            "bold": true
+          }
+        ],
+        "space_before": 12
+      }
+    },
+    {
+      "tool": "add_items",
+      "args": {
+        "items": [
+          [
+            {
+              "text": "Giáo viên:",
+              "bold": true
+            }
+          ],
+          [
+            {
+              "text": "Giáo án, máy chiếu, bảng phụ."
+            }
+          ],
+          [
+            {
+              "text": "Hệ thống bài tập, ví dụ minh họa."
+            }
+          ],
+          [
+            {
+              "text": "Học sinh:",
+              "bold": true
+            }
+          ],
+          [
+            {
+              "text": "Sách giáo khoa, vở ghi, dụng cụ học tập."
+            }
+          ],
+          [
+            {
+              "text": "Ôn tập kiến thức về phân số, biểu thức đại số, đa thức."
+            }
+          ]
+        ],
+        "bullet": "•"
+      }
+    },
+    {
+      "tool": "add_para",
+      "args": {
+        "text": [
+          {
+            "text": "IV. TIẾN TRÌNH DẠY HỌC",
+            "bold": true
+          }
+        ],
+        "space_before": 12
+      }
+    },
+    {
+      "tool": "add_para",
+      "args": {
+        "text": [
+          {
+            "text": "HOẠT ĐỘNG 1: KHỞI ĐỘNG (5 phút)",
+            "bold": true
+          }
+        ],
+        "space_before": 8
+      }
+    },
+    {
+      "tool": "add_items",
+      "args": {
+        "items": [
+          [
+            {
+              "text": "Mục tiêu: Tạo hứng thú, gợi nhớ kiến thức liên quan về phân số và biểu thức đại số."
+            }
+          ],
+          [
+            {
+              "text": "Nội dung: Giáo viên đặt câu hỏi gợi mở về phân số số học, biểu thức đại số."
+            }
+          ],
+          [
+            {
+              "text": "Sản phẩm: Câu trả lời của học sinh."
+            }
+          ],
+          [
+            {
+              "text": "Tổ chức thực hiện:"
+            }
+          ],
+          [
+            {
+              "text": "GV: “Em hãy nhắc lại định nghĩa phân số và cho ví dụ.”"
+            }
+          ],
+          [
+            {
+              "text": "GV: “Một biểu thức đại số được cấu tạo từ những thành phần nào?”"
+            }
+          ],
+          [
+            {
+              "text": "HS: Trả lời câu hỏi."
+            }
+          ]
+        ],
+        "bullet": "•"
+      }
+    },
+    {
+      "tool": "add_para",
+      "args": {
+        "text": [
+          {
+            "text": "HOẠT ĐỘNG 2: HÌNH THÀNH KIẾN THỨC (60 phút)",
+            "bold": true
+          }
+        ],
+        "space_before": 8
+      }
+    },
+    {
+      "tool": "add_items",
+      "args": {
+        "items": [
+          [
+            {
+              "text": "Mục tiêu: Hình thành khái niệm phân thức đại số, điều kiện xác định và các phép toán cơ bản."
+            }
+          ],
+          [
+            {
+              "text": "Nội dung:"
+            }
+          ],
+          [
+            {
+              "text": "1. Khái niệm phân thức đại số."
+            }
+          ],
+          [
+            {
+              "text": "2. Điều kiện xác định của phân thức."
+            }
+          ],
+          [
+            {
+              "text": "3. Rút gọn phân thức."
+            }
+          ],
+          [
+            {
+              "text": "4. Các phép toán trên phân thức (cộng, trừ, nhân, chia)."
+            }
+          ],
+          [
+            {
+              "text": "Sản phẩm: Kiến thức ghi trong vở của học sinh, các ví dụ được giải."
+            }
+          ],
+          [
+            {
+              "text": "Tổ chức thực hiện:"
+            }
+          ],
+          [
+            {
+              "text": "GV giới thiệu định nghĩa, cách tìm điều kiện xác định, hướng dẫn rút gọn và thực hiện các phép toán với ví dụ minh họa."
+            }
+          ],
+          [
+            {
+              "text": "HS lắng nghe, ghi chép, đặt câu hỏi và làm các ví dụ theo hướng dẫn của GV."
+            }
+          ]
+        ],
+        "bullet": "•"
+      }
+    },
+    {
+      "tool": "add_para",
+      "args": {
+        "text": [
+          {
+            "text": "HOẠT ĐỘNG 3: LUYỆN TẬP (15 phút)",
+            "bold": true
+          }
+        ],
+        "space_before": 8
+      }
+    },
+    {
+      "tool": "add_items",
+      "args": {
+        "items": [
+          [
+            {
+              "text": "Mục tiêu: Củng cố kiến thức và kỹ năng làm bài tập cơ bản."
+            }
+          ],
+          [
+            {
+              "text": "Nội dung: Giải các bài tập trong SGK liên quan đến rút gọn, tìm ĐKXĐ, thực hiện phép toán."
+            }
+          ],
+          [
+            {
+              "text": "Sản phẩm: Lời giải các bài tập của học sinh."
+            }
+          ],
+          [
+            {
+              "text": "Tổ chức thực hiện:"
+            }
+          ],
+          [
+            {
+              "text": "GV giao bài tập, quan sát và hỗ trợ học sinh."
+            }
+          ],
+          [
+            {
+              "text": "HS làm bài tập cá nhân hoặc theo nhóm nhỏ, trình bày kết quả."
+            }
+          ]
+        ],
+        "bullet": "•"
+      }
+    },
+    {
+      "tool": "add_para",
+      "args": {
+        "text": [
+          {
+            "text": "HOẠT ĐỘNG 4: VẬN DỤNG - MỞ RỘNG (5 phút)",
+            "bold": true
+          }
+        ],
+        "space_before": 8
+      }
+    },
+    {
+      "tool": "add_items",
+      "args": {
+        "items": [
+          [
+            {
+              "text": "Mục tiêu: Nâng cao khả năng tư duy và ứng dụng kiến thức vào bài toán phức tạp hơn."
+            }
+          ],
+          [
+            {
+              "text": "Nội dung: Bài toán có yếu tố thực tế hoặc bài toán tổng hợp nhiều phép toán."
+            }
+          ],
+          [
+            {
+              "text": "Sản phẩm: Các ý tưởng, phương án giải quyết của học sinh."
+            }
+          ],
+          [
+            {
+              "text": "Tổ chức thực hiện:"
+            }
+          ],
+          [
+            {
+              "text": "GV đưa ra một bài toán mở rộng/thực tế."
+            }
+          ],
+          [
+            {
+              "text": "HS suy nghĩ, thảo luận để tìm cách giải."
+            }
+          ]
+        ],
+        "bullet": "•"
+      }
+    },
+    {
+      "tool": "add_para",
+      "args": {
+        "text": [
+          {
+            "text": "HOẠT ĐỘNG 5: CỦNG CỐ - DẶN DÒ (5 phút)",
+            "bold": true
+          }
+        ],
+        "space_before": 8
+      }
+    },
+    {
+      "tool": "add_items",
+      "args": {
+        "items": [
+          [
+            {
+              "text": "Mục tiêu: Tổng kết bài học và giao nhiệm vụ về nhà."
+            }
+          ],
+          [
+            {
+              "text": "Nội dung:"
+            }
+          ],
+          [
+            {
+              "text": "Tổng kết các kiến thức trọng tâm của bài."
+            }
+          ],
+          [
+            {
+              "text": "Giao bài tập về nhà."
+            }
+          ],
+          [
+            {
+              "text": "Hướng dẫn chuẩn bị bài mới."
+            }
+          ],
+          [
+            {
+              "text": "Sản phẩm: Nắm vững kiến thức, ghi nhớ bài tập về nhà."
+            }
+          ],
+          [
+            {
+              "text": "Tổ chức thực hiện:"
+            }
+          ],
+          [
+            {
+              "text": "GV hệ thống lại kiến thức, nhấn mạnh các điểm cần lưu ý."
+            }
+          ],
+          [
+            {
+              "text": "GV giao bài tập về nhà và dặn dò."
+            }
+          ],
+          [
+            {
+              "text": "HS lắng nghe, ghi chép."
+            }
+          ]
+        ],
+        "bullet": "•"
+      }
+    }
+  ]
+}

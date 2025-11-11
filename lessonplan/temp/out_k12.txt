@@ -1,0 +1,188 @@
+{
+  "meta": {
+    "subject": "Toán",
+    "grade": 10,
+    "lesson_title": "Phân thức đại số: Khái niệm và rút gọn",
+    "periods": 1
+  },
+  "objectives": {
+    "knowledge": [
+      "Nêu được khái niệm phân thức đại số, điều kiện xác định của phân thức.",
+      "Nhận biết được hai phân thức bằng nhau.",
+      "Thực hiện được việc rút gọn phân thức đại số."
+    ],
+    "competencies": [
+      "Năng lực tư duy và lập luận toán học: So sánh, tổng hợp kiến thức đã học về phân số để xây dựng khái niệm phân thức đại số; phân tích các yếu tố để xác định điều kiện của biến.",
+      "Năng lực giải quyết vấn đề toán học: Giải quyết các bài toán rút gọn phân thức đại số.",
+      "Năng lực giao tiếp toán học: Trình bày, trao đổi ý tưởng về phân thức đại số và cách rút gọn."
+    ],
+    "qualities": [
+      "Chăm chỉ: Tích cực tìm tòi, sáng tạo trong học tập, có ý chí vượt khó để đạt kết quả tốt trong học tập.",
+      "Trung thực: Có tinh thần trách nhiệm, nghiêm túc trong việc thực hành các phép toán và trình bày lời giải.",
+      "Trách nhiệm: Hoàn thành nhiệm vụ được giao, hợp tác với bạn bè trong các hoạt động nhóm."
+    ]
+  },
+  "resources": {
+    "teacher": [
+      "Giáo án, Sách giáo khoa Toán 10, bảng, phấn, máy chiếu (nếu có).",
+      "Phiếu học tập, bài tập củng cố."
+    ],
+    "student": [
+      "Sách giáo khoa Toán 10, vở ghi, bút.",
+      "Ôn tập kiến thức về phân số và rút gọn phân số ở cấp THCS, khái niệm đa thức."
+    ]
+  },
+  "start_activity": {
+    "general_info": {
+      "objective": "Tạo hứng thú, khơi gợi kiến thức nền về phân số và đa thức, dẫn dắt vào bài mới về phân thức đại số.",
+      "content": "Giáo viên đưa ra một ví dụ về phân số và một ví dụ về biểu thức có dạng thương của hai đa thức.",
+      "expected_products": "Học sinh nhớ lại khái niệm phân số, đa thức và mối liên hệ giữa chúng. Từ đó, hình dung được về phân thức đại số."
+    },
+    "execution": {
+      "execute_description": [
+        "Giáo viên chiếu hoặc viết lên bảng hai biểu thức: 1/2 và (x+1)/(x-2).",
+        "Giáo viên yêu cầu học sinh thảo luận nhanh và trả lời câu hỏi: Biểu thức đầu tiên là gì? Biểu thức thứ hai có gì giống và khác biểu thức thứ nhất? (2 phút)",
+        "Giáo viên dẫn dắt vào bài mới: Để hiểu rõ hơn về các biểu thức có dạng thương của hai đa thức, chúng ta sẽ cùng tìm hiểu bài “Phân thức đại số: Khái niệm và rút gọn”."
+      ],
+      "teacher_prompts": [
+        "Biểu thức 1/2 gọi là gì?",
+        "Em thấy biểu thức (x+1)/(x-2) có gì đặc biệt? Nó có gì giống và khác so với phân số 1/2?"
+      ]
+    }
+  },
+  "knowledge_formation_activity": {
+    "sub_activities": [
+      {
+        "title": "Hoạt động 1: Khái niệm phân thức đại số và điều kiện xác định",
+        "general_info": {
+          "objective": "Học sinh nắm được khái niệm phân thức đại số, biết cách tìm điều kiện xác định của một phân thức.",
+          "content": "Giáo viên định nghĩa phân thức đại số, đưa ra ví dụ và hướng dẫn học sinh tìm điều kiện xác định của phân thức.",
+          "expected_products": "Học sinh nêu được định nghĩa phân thức, viết được các ví dụ về phân thức, tìm được điều kiện xác định của một phân thức cụ thể."
+        },
+        "step": {
+          "assign_task": {
+            "activity": [
+              "Giáo viên: “Từ ví dụ mở đầu và kiến thức về phân số, em nào có thể định nghĩa được phân thức đại số?”",
+              "Học sinh: Suy nghĩ, dựa vào kiến thức cũ và ví dụ để định nghĩa."
+            ],
+            "expected_products": [
+              "Một số định nghĩa sơ bộ từ học sinh.",
+              "Phân thức đại số là một biểu thức có dạng A/B, trong đó A và B là các đa thức và B khác đa thức 0."
+            ]
+          },
+          "do_task": {
+            "activity": [
+              "Giáo viên: Chính xác. Phân thức đại số là một biểu thức có dạng A/B, trong đó A và B là các đa thức và B khác đa thức 0. Ví dụ: (x+1)/(x-2). Tương tự như phân số, để phân thức có nghĩa thì mẫu số phải khác 0. Vậy điều kiện để phân thức (x+1)/(x-2) có nghĩa là gì?",
+              "Học sinh: Thực hiện xác định điều kiện cho mẫu số khác 0 và giải phương trình tìm x."
+            ],
+            "expected_products": [
+              "Định nghĩa chuẩn xác của phân thức đại số.",
+              "Điều kiện xác định của phân thức (x+1)/(x-2) là x-2 khác 0, tức là x khác 2."
+            ]
+          },
+          "discuss_task": {
+            "activity": [
+              "Giáo viên: Yêu cầu học sinh khác nhận xét, bổ sung câu trả lời về điều kiện xác định.",
+              "Học sinh: Trao đổi, nhận xét, đưa ra ý kiến bổ sung (nếu có)."
+            ],
+            "expected_products": [
+              "Các câu trả lời được thống nhất và chính xác.",
+              "Tất cả học sinh nắm vững cách tìm điều kiện xác định của phân thức."
+            ]
+          },
+          "conclusion_task": {
+            "activity": [
+              "Giáo viên: Chốt kiến thức về định nghĩa phân thức đại số và cách tìm điều kiện xác định. Yêu cầu học sinh ghi chép.",
+              "Học sinh: Ghi chép định nghĩa và cách tìm điều kiện xác định vào vở."
+            ],
+            "expected_products": [
+              "Kiến thức về định nghĩa phân thức đại số và điều kiện xác định được ghi đầy đủ và chính xác trong vở.",
+              "Học sinh nắm vững hai khái niệm này."
+            ]
+          }
+        }
+      },
+      {
+        "title": "Hoạt động 2: Rút gọn phân thức đại số",
+        "general_info": {
+          "objective": "Học sinh biết cách rút gọn phân thức đại số bằng cách chia cả tử và mẫu cho nhân tử chung.",
+          "content": "Giáo viên nhắc lại cách rút gọn phân số, từ đó hướng dẫn rút gọn phân thức bằng cách phân tích tử và mẫu thành nhân tử và chia cho nhân tử chung.",
+          "expected_products": "Học sinh thực hiện được việc rút gọn các phân thức đại số đơn giản."
+        },
+        "step": {
+          "assign_task": {
+            "activity": [
+              "Giáo viên: “Để rút gọn phân số 6/9, chúng ta làm thế nào? Từ đó, em hãy dự đoán cách rút gọn phân thức đại số?”",
+              "Học sinh: Trả lời về cách rút gọn phân số (chia tử và mẫu cho ước chung lớn nhất). Dự đoán cách rút gọn phân thức (chia tử và mẫu cho nhân tử chung)."
+            ],
+            "expected_products": [
+              "Học sinh nhớ lại cách rút gọn phân số.",
+              "Học sinh đưa ra ý tưởng phân tích tử và mẫu thành nhân tử rồi triệt tiêu nhân tử chung."
+            ]
+          },
+          "do_task": {
+            "activity": [
+              "Giáo viên: \"Rút gọn phân thức (x^2 - 4)/(x+2). (Với x khác -2)\"",
+              "Học sinh: Thảo luận theo nhóm nhỏ hoặc làm việc cá nhân để thực hiện rút gọn phân thức. Phân tích tử số thành (x-2)(x+2) và chia cả tử và mẫu cho (x+2)."
+            ],
+            "expected_products": [
+              "Phân thức (x^2 - 4)/(x+2) được rút gọn thành x-2 (với x khác -2)."
+            , "Các nhóm/cá nhân trình bày kết quả."
+            ]
+          },
+          "discuss_task": {
+            "activity": [
+              "Giáo viên: Yêu cầu đại diện một vài nhóm/cá nhân trình bày lời giải và cách làm.",
+              "Học sinh: Trình bày bài làm, các học sinh khác lắng nghe, nhận xét và đặt câu hỏi (nếu có)."
+            ],
+            "expected_products": [
+              "Các bước giải được trình bày rõ ràng trên bảng hoặc phiếu học tập.",
+              "Sự thống nhất trong cách làm và kết quả."
+            ]
+          },
+          "conclusion_task": {
+            "activity": [
+              "Giáo viên: Chốt lại các bước rút gọn phân thức đại số: 1. Phân tích tử và mẫu thành nhân tử. 2. Chia cả tử và mẫu cho nhân tử chung. Yêu cầu học sinh ghi nhớ và ghi chép.",
+              "Học sinh: Ghi chép các bước rút gọn phân thức vào vở."
+            ],
+            "expected_products": [
+              "Quy tắc rút gọn phân thức đại số được ghi đầy đủ và chính xác trong vở.",
+              "Học sinh nắm vững cách rút gọn phân thức."
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "practice_activity": {
+    "general_info": {
+      "objective": "Củng cố kiến thức về khái niệm, điều kiện xác định và rút gọn phân thức thông qua các bài tập cụ thể.",
+      "content": "Giáo viên giao các bài tập về tìm điều kiện xác định và rút gọn phân thức.",
+      "expected_products": "Học sinh hoàn thành các bài tập, củng cố và khắc sâu kiến thức, kỹ năng đã học."
+    },
+    "execution": {
+      "execute_description": [
+        "Giáo viên: Phát phiếu bài tập hoặc chiếu các bài tập lên bảng: 1. Tìm điều kiện xác định của phân thức (3x)/(x^2-9). 2. Rút gọn phân thức (x^2+x)/(x+1). (5 phút)",
+        "Học sinh: Làm bài tập cá nhân vào vở, một số học sinh lên bảng trình bày.",
+        "Giáo viên: Gọi học sinh nhận xét bài làm của bạn và chữa bài, bổ sung nếu cần thiết.",
+        "Học sinh: Trao đổi, nhận xét, hoàn thiện bài giải vào vở."
+      ],
+      "teacher_prompts": null
+    }
+  },
+  "extend_activity": {
+    "general_info": {
+      "objective": "Mở rộng kiến thức và chuẩn bị cho bài học tiếp theo về các phép toán với phân thức đại số.",
+      "content": "Giáo viên gợi ý về các phép toán cộng, trừ, nhân, chia phân thức và giao bài tập về nhà.",
+      "expected_products": "Học sinh chủ động tìm hiểu trước về các phép toán với phân thức và hoàn thành bài tập về nhà."
+    },
+    "execution": {
+      "execute_description": [
+        "Giáo viên: “Giống như phân số, phân thức đại số cũng có thể thực hiện các phép cộng, trừ, nhân, chia. Các em hãy về nhà tìm hiểu thêm về các phép toán này.”",
+        "Giáo viên: Giao bài tập về nhà trong SGK để học sinh ôn tập và chuẩn bị cho bài học tiếp theo.",
+        "Học sinh: Lắng nghe, ghi chép bài tập về nhà và tự giác tìm hiểu kiến thức cho buổi học tiếp theo."
+      ],
+      "teacher_prompts": null
+    }
+  }
+}

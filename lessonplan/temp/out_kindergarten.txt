@@ -1,0 +1,117 @@
+{
+  "meta": {
+    "school_name": "Trường Mầm non Sao Mai",
+    "teacher_name": "Nguyễn Thị Hoa",
+    "subject": "Thế giới động vật",
+    "lesson_title": "Khám phá cuộc sống của loài kiến"
+  },
+  "objectives": {
+    "steam": {
+      "science": [
+        "Trẻ biết một số đặc điểm nổi bật của loài kiến (kích thước, màu sắc, số chân, nơi sống).",
+        "Trẻ nhận biết các bộ phận chính của kiến (đầu, ngực, bụng, chân, râu)."
+      ],
+      "technology": [
+        "Trẻ sử dụng các công cụ đơn giản (kính lúp, hộp quan sát) để quan sát kiến.",
+        "Trẻ biết cách sử dụng máy tính bảng/điện thoại thông minh (nếu có) để xem video về kiến."
+      ],
+      "engineering": [
+        "Trẻ biết cách lắp ráp mô hình tổ kiến đơn giản từ vật liệu tái chế.",
+        "Trẻ có ý tưởng về cách xây dựng đường đi cho kiến hoặc tạo môi trường sống cho kiến."
+      ],
+      "mathematics": [
+        "Trẻ đếm số lượng chân của kiến và các bộ phận cơ thể khác.",
+        "Trẻ phân loại kiến theo kích thước (to, nhỏ), màu sắc.",
+        "Trẻ so sánh kích thước của các con kiến."
+      ]
+    },
+    "skills": [
+      "Kỹ năng quan sát, so sánh và phân loại.",
+      "Kỹ năng đặt câu hỏi và trả lời câu hỏi đơn giản.",
+      "Kỹ năng làm việc nhóm, hợp tác và chia sẻ ý kiến.",
+      "Kỹ năng khéo léo khi sử dụng các vật liệu để tạo ra sản phẩm."
+    ],
+    "attitude": [
+      "Trẻ có thái độ yêu quý các loài vật và ý thức bảo vệ môi trường sống của chúng.",
+      "Trẻ hứng thú, tích cực tham gia vào các hoạt động khám phá khoa học.",
+      "Trẻ thể hiện sự kiên nhẫn và cẩn thận khi quan sát và thực hiện nhiệm vụ."
+    ]
+  },
+  "resources": {
+    "place": "Phòng học, sân trường hoặc khu vực có nhiều kiến",
+    "teacher": [
+      "Hộp nuôi kiến (Ant Farm) hoặc lọ thủy tinh có đất và kiến.",
+      "Kính lúp, hộp quan sát côn trùng.",
+      "Tranh ảnh, video về loài kiến và tổ kiến.",
+      "Các vật liệu tái chế: hộp giấy, ống hút, bìa carton, kéo, hồ dán, màu vẽ.",
+      "Bài hát, câu chuyện, thơ về kiến."
+    ],
+    "student": [
+      "Kính lúp, hộp quan sát (nếu có đủ)",
+      "Vật liệu tái chế theo nhóm.",
+      "Giấy, bút chì, màu vẽ."
+    ]
+  },
+  "activities": {
+    "engagement": {
+      "teacher_activity": [
+        "Giáo viên chào hỏi trẻ và giới thiệu về buổi học.",
+        "Giáo viên cho trẻ nghe bài hát “Chị ong nâu và em bé” hoặc kể câu chuyện “Kiến và ve sầu”.",
+        "Giáo viên đặt câu hỏi gợi mở: “Các con có biết con vật nào nhỏ bé nhưng rất chăm chỉ không? Các con đã bao giờ nhìn thấy kiến chưa? Kiến sống ở đâu? Kiến thường làm gì?”"
+      ],
+      "student_activity": [
+        "Trẻ chào giáo viên.",
+        "Trẻ lắng nghe bài hát/câu chuyện và cùng hát/đọc theo.",
+        "Trẻ trả lời các câu hỏi của giáo viên, chia sẻ hiểu biết ban đầu về kiến."
+      ]
+    },
+    "exploration": {
+      "teacher_activity": [
+        "Giáo viên hướng dẫn trẻ ra sân trường hoặc khu vực đã chuẩn bị để tìm kiến và tổ kiến.",
+        "Giáo viên phát cho mỗi nhóm/cá nhân kính lúp, hộp quan sát và hướng dẫn cách quan sát an toàn, không làm hại kiến.",
+        "Giáo viên khuyến khích trẻ tự do quan sát, chạm nhẹ vào kiến (nếu kiến không có nọc độc) và thảo luận trong nhóm về những gì trẻ nhìn thấy."
+      ],
+      "student_activity": [
+        "Trẻ đi theo sự hướng dẫn của giáo viên để tìm kiến và tổ kiến.",
+        "Trẻ sử dụng kính lúp, hộp quan sát để quan sát kiến một cách cẩn thận.",
+        "Trẻ đặt câu hỏi cho bạn, trao đổi với các bạn về những điều thú vị mình quan sát được: “Con kiến này có màu gì?”, “Nó có mấy chân?”, “Nó đang làm gì vậy?”"
+      ]
+    },
+    "explanation": {
+      "teacher_activity": [
+        "Giáo viên tập trung trẻ lại và mời một số trẻ chia sẻ về những gì trẻ đã quan sát được.",
+        "Giáo viên trình chiếu tranh ảnh/video về kiến, tổ kiến và các hoạt động của kiến (tha mồi, xây tổ, di chuyển).",
+        "Giáo viên giải thích rõ ràng về các bộ phận của kiến (đầu, ngực, bụng, chân, râu), vòng đời của kiến, lợi ích và tác hại của kiến."
+      ],
+      "student_activity": [
+        "Trẻ chia sẻ những điều mình đã thấy khi quan sát kiến, đặt câu hỏi cho giáo viên và bạn bè.",
+        "Trẻ xem tranh ảnh/video và lắng nghe giáo viên giải thích.",
+        "Trẻ đặt câu hỏi về những thông tin mới được cung cấp."
+      ]
+    },
+    "elaborate": {
+      "teacher_activity": [
+        "Giáo viên chia trẻ thành các nhóm nhỏ và giao nhiệm vụ “Xây tổ kiến” hoặc “Làm đường cho kiến”.",
+        "Giáo viên cung cấp các vật liệu tái chế (hộp giấy, ống hút, bìa carton, kéo, hồ dán, màu vẽ) và hướng dẫn trẻ cách sử dụng an toàn.",
+        "Giáo viên khuyến khích trẻ sáng tạo, hợp tác trong nhóm để tạo ra sản phẩm. Giáo viên đi từng nhóm gợi ý, hỗ trợ trẻ khi cần."
+      ],
+      "student_activity": [
+        "Trẻ về nhóm, lắng nghe nhiệm vụ và cùng nhau thảo luận ý tưởng.",
+        "Trẻ phân công nhiệm vụ trong nhóm, sử dụng vật liệu để thiết kế và xây dựng tổ kiến/đường đi cho kiến.",
+        "Trẻ hợp tác, giúp đỡ lẫn nhau để hoàn thành sản phẩm."
+      ]
+    },
+    "evaluate": {
+      "teacher_activity": [
+        "Giáo viên mời đại diện các nhóm lên giới thiệu sản phẩm của mình, nói về ý tưởng và cách làm.",
+        "Giáo viên nhận xét, khen ngợi, động viên các nhóm và cá nhân. Đặt câu hỏi mở để trẻ suy nghĩ thêm về sản phẩm và quá trình làm.",
+        "Giáo viên tổng kết bài học, nhấn mạnh lại những kiến thức quan trọng và giáo dục trẻ về lòng yêu thương động vật, bảo vệ môi trường."
+      ],
+      "student_activity": [
+        "Đại diện nhóm trình bày sản phẩm, giải thích ý tưởng và quá trình thực hiện.",
+        "Trẻ khác lắng nghe, đặt câu hỏi và đưa ra nhận xét cho các nhóm bạn.",
+        "Trẻ cùng giáo viên tổng kết bài học và bày tỏ cảm xúc của mình sau hoạt động."
+      ]
+    }
+  }
+}

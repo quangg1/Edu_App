@@ -1,23 +1,28 @@
 const mongoose = require('mongoose');
 
 const quizSchema = new mongoose.Schema({
+  // Owner (denormalized)
   teacher: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'TeacherProfile',
-    required: true
-  },
-  subject: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Subject',
-    required: true
-  },
-  grade: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Grade',
-    required: true
+    id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    name: String,
+    email: String
   },
 
-  // 🧠 Thông tin chung
+  // Subject & Grade 
+  subject: {
+    name: String,
+    code: String
+  },
+  grade: {
+    level: Number,
+    name: String
+  },
+
+
   title: { type: String, required: true },
   description: String,
   quizType: {
@@ -86,7 +91,11 @@ const quizSchema = new mongoose.Schema({
   tags: [String]
 }, { timestamps: true });
 
-quizSchema.index({ teacher: 1, subject: 1, grade: 1 });
+// Indexes
+quizSchema.index({ 'teacher.id': 1, status: 1 });
+quizSchema.index({ 'subject.name': 1, 'grade.level': 1 });
 quizSchema.index({ status: 1, isPublic: 1 });
+quizSchema.index({ tags: 1 });
+quizSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('Quiz', quizSchema);

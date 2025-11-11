@@ -1,18 +1,25 @@
 const mongoose = require('mongoose');
 
 const lessonPlanSchema = new mongoose.Schema({
+
   teacher: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'TeacherProfile',
-    required: true
+    id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    name: String,  
+    email: String   
   },
+
+  // Subject & Grade 
   subject: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Subject'
+    name: String,  
+    code: String    
   },
   grade: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Grade'
+    level: Number,  
+    name: String   
   },
 
 
@@ -23,10 +30,10 @@ const lessonPlanSchema = new mongoose.Schema({
 
 
   objectives: {
-    knowledge: [String],      // Kiến thức
-    skills: [String],         // Kỹ năng
-    attitude: [String],       // Thái độ
-    competence: [String],     // Năng lực (nếu có)
+    knowledge: [String],      
+    skills: [String],         
+    attitude: [String],       
+    competence: [String],     
   },
 
   learningOutcomes: {
@@ -99,7 +106,11 @@ const lessonPlanSchema = new mongoose.Schema({
   tags: [String]
 }, { timestamps: true });
 
-lessonPlanSchema.index({ teacher: 1, subject: 1, grade: 1 });
+// Indexes
+lessonPlanSchema.index({ 'teacher.id': 1, status: 1 });
+lessonPlanSchema.index({ 'subject.name': 1, 'grade.level': 1 });
 lessonPlanSchema.index({ status: 1, isPublic: 1 });
+lessonPlanSchema.index({ tags: 1 });
+lessonPlanSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('LessonPlan', lessonPlanSchema);

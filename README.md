@@ -408,24 +408,19 @@ Instead of separate collections, use constants:
 ```javascript
 // constants/subjects.js
 const SUBJECTS = [
-  { code: 'MATH', name: 'Mathematics', level: 'THCS' },
-  { code: 'LITERATURE', name: 'Literature', level: 'THCS' },
-  { code: 'ENGLISH', name: 'English', level: 'THCS' },
-  { code: 'PHYSICS', name: 'Physics', level: 'THPT' },
-  { code: 'CHEMISTRY', name: 'Chemistry', level: 'THPT' },
-  { code: 'BIOLOGY', name: 'Biology', level: 'THPT' },
-  { code: 'HISTORY', name: 'History', level: 'THCS' },
-  { code: 'GEOGRAPHY', name: 'Geography', level: 'THCS' },
-  { code: 'CIVIC', name: 'Civic Education', level: 'THCS' },
-  { code: 'IT', name: 'Information Technology', level: 'THCS' }
-];
-
-// constants/grades.js
-const GRADES = [
-  { level: 1, name: 'Grade 1' },
-  { level: 2, name: 'Grade 2' },
-  // ... 
-  { level: 12, name: 'Grade 12' }
+  { code: 'MATH', name: 'Toán học' },
+  { code: 'LITERATURE', name: 'Ngữ văn' },
+  { code: 'ENGLISH', name: 'Tiếng Anh' },
+  { code: 'PHYSICS', name: 'Vật lý' },
+  { code: 'CHEMISTRY', name: 'Hóa học' },
+  { code: 'BIOLOGY', name: 'Sinh học' },
+  { code: 'HISTORY', name: 'Lịch sử' },
+  { code: 'GEOGRAPHY', name: 'Địa lý' },
+  { code: 'CIVIC', name: 'Giáo dục công dân' },
+  { code: 'IT', name: 'Tin học' },
+  { code: 'MUSIC', name: 'Âm nhạc' },
+  { code: 'ART', name: 'Mỹ thuật' },
+  { code: 'PE', name: 'Thể dục' }
 ];
 ```
 

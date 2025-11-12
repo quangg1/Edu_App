@@ -271,6 +271,38 @@ const TestDialog = ({ open, onOpenChange }: { open: boolean; onOpenChange: (open
                         setDownloadUrl(url);
                       }
                       setLoading(false);
+                      
+                      // Tự động lưu vào database
+                      if (data.detail.questions && data.detail.questions.length > 0) {
+                        fetch(`${FRONTEND_API}/api/v1/quizzes/save`, {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          credentials: 'include',
+                          body: JSON.stringify({
+                            title: data.detail.name || formData.name || "Đề thi AI",
+                            subject: data.detail.subject || formData.subject,
+                            grade: data.detail.grade || formData.grade,
+                            questions: data.detail.questions,
+                            timeLimit: data.detail.time_limit || formData.time_limit,
+                            difficulty: data.detail.difficulty || formData.difficulty,
+                            file_name: data.detail.file_name,
+                            download_url: data.detail.download_url
+                          })
+                        })
+                        .then(res => res.json())
+                        .then(result => {
+                          if (result.success) {
+                            console.log('✅ Đề thi đã được lưu vào database:', result.data.quizId);
+                          } else {
+                            console.warn('⚠️ Không thể lưu đề thi:', result.message);
+                          }
+                        })
+                        .catch(err => {
+                          console.error('❌ Lỗi khi lưu đề thi:', err);
+                        });
+                      }
                     }
                     break;
 

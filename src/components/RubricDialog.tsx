@@ -225,6 +225,38 @@ const RubricDialog = ({ open, onOpenChange, onRubricCreated }: RubricDialogProps
             setDownloadToken(token);
             setIsGenerating(false);
             
+            // Tự động lưu vào database
+            if (finalRubricDataRef.current.criteria && finalRubricDataRef.current.criteria.length > 0) {
+              const FRONTEND_API = 'https://gemini.veronlabs.com/bot5';
+              fetch(`${FRONTEND_API}/api/v1/rubrics/save`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                  title: formData.title,
+                  subject: formData.subject,
+                  grade: formData.grade,
+                  assessmentType: formData.type,
+                  criteria: finalRubricDataRef.current.criteria,
+                  description: formData.description,
+                  downloadToken: token
+                })
+              })
+              .then(res => res.json())
+              .then(result => {
+                if (result.success) {
+                  console.log('✅ Thang đánh giá đã được lưu vào database:', result.data.rubricId);
+                } else {
+                  console.warn('⚠️ Không thể lưu thang đánh giá:', result.message);
+                }
+              })
+              .catch(err => {
+                console.error('❌ Lỗi khi lưu thang đánh giá:', err);
+              });
+            }
+            
             // Update the generated rubric data and notify parent
             if (onRubricCreated && finalRubricDataRef.current.criteria) {
               const newRubric: Rubric = {

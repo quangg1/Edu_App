@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
 import TestDialog, { TestFormData } from "../components/TestDialog";
@@ -7,6 +7,18 @@ import { Button } from "../components/ui/button";
 import { FileText, Plus, BookOpen, CheckSquare, Download, Clock, Target } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
 import Layout from "../components/Layout";
+
+interface Quiz {
+  _id: string;
+  id?: string;
+  title: string;
+  subject?: { name: string; code: string };
+  grade?: { level: number; name: string };
+  questions: any[];
+  settings?: { timeLimit: number };
+  createdAt: string;
+  difficulty?: string;
+}
 
 const TestBuilder = () => {
   const { toast } = useToast();
@@ -24,51 +36,107 @@ const TestBuilder = () => {
     duration: number;
     questionCount: number;
     downloadUrl?: string;
+    date?: string;
   }[]
 >([]);
+  const [loading, setLoading] = useState(true);
+  
+  const FRONTEND_API = 'https://gemini.veronlabs.com/bot5';
+  
+  // Fetch quizzes from API
+  useEffect(() => {
+    const fetchQuizzes = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${FRONTEND_API}/api/v1/quizzes`, {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            // Transform API data to component format
+            const transformed = result.data.map((quiz: Quiz) => ({
+              id: quiz._id || quiz.id,
+              name: quiz.title || "Đề thi không có tiêu đề",
+              subject: quiz.subject?.name || "Không xác định",
+              grade: quiz.grade?.name || "Không xác định",
+              type: "Trắc nghiệm",
+              difficulty: quiz.difficulty || "Medium",
+              questions: quiz.questions || [],
+              duration: quiz.settings?.timeLimit || 45,
+              questionCount: quiz.questions?.length || 0,
+              date: formatDate(quiz.createdAt)
+            }));
+            setTests(transformed);
+          }
+        } else {
+          console.warn('Không thể tải danh sách đề thi');
+        }
+      } catch (error) {
+        console.error('Lỗi khi tải danh sách đề thi:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchQuizzes();
+  }, []);
+  
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 60) return `${diffMins} phút trước`;
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    if (diffDays < 7) return `${diffDays} ngày trước`;
+    return date.toLocaleDateString('vi-VN');
+  };
 
   const handleCreateTest = () => {
     setDialogOpen(true);
   };
 
   const handleSubmitTest = async (data: TestFormData) => {
-    try {
-      const formData = new FormData();
-      for (const key in data) {
-        formData.append(key, data[key as keyof TestFormData] as any);
-      }
-  
-      const res = await fetch("https://gemini.veronlabs.com/bot4/generate-quiz", {
-        method: "POST",
-        body: formData,
-      });
-  
-      const result = await res.json();
-  
-      if (result.success) {
-        const test = result.test;
-        setTests((prev) => [
-          {
-            id: test.id,
-            name: test.title,
-            subject: test.subject,
-            grade: test.grade,
-            type: test.type,
-            difficulty: test.difficulty,
-            duration: test.duration,
-            questionCount: test.questionCount,
-            questions: test.questions,
-            downloadUrl: result.downloadUrl,
-          },
-          ...prev,
-        ]);
-        toast({ title: "Đề kiểm tra đã được tạo thành công!" });
-      } else {
-        toast({ title: "Tạo đề thất bại!", variant: "destructive" });
-      }
-    } catch (error) {
-      toast({ title: "Lỗi khi gọi API", variant: "destructive" });
-    }
+    // Reload quizzes after creation (the save happens automatically in TestDialog)
+    setTimeout(() => {
+      const fetchQuizzes = async () => {
+        try {
+          const response = await fetch(`${FRONTEND_API}/api/v1/quizzes`, {
+            credentials: 'include'
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.data) {
+              const transformed = result.data.map((quiz: Quiz) => ({
+                id: quiz._id || quiz.id,
+                name: quiz.title || "Đề thi không có tiêu đề",
+                subject: quiz.subject?.name || "Không xác định",
+                grade: quiz.grade?.name || "Không xác định",
+                type: "Trắc nghiệm",
+                difficulty: quiz.difficulty || "Medium",
+                questions: quiz.questions || [],
+                duration: quiz.settings?.timeLimit || 45,
+                questionCount: quiz.questions?.length || 0,
+                date: formatDate(quiz.createdAt)
+              }));
+              setTests(transformed);
+            }
+          }
+        } catch (error) {
+          console.error('Lỗi khi tải lại danh sách đề thi:', error);
+        }
+      };
+      
+      fetchQuizzes();
+    }, 2000); // Wait 2 seconds for save to complete
+    
+    toast({ title: "Đề kiểm tra đã được tạo thành công!" });
   };
 
   const testTypes = [
@@ -171,8 +239,13 @@ const TestBuilder = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {tests.map((test) => (
+            {loading ? (
+              <div className="text-center py-4 text-muted-foreground">Đang tải...</div>
+            ) : tests.length === 0 ? (
+              <div className="text-center py-4 text-muted-foreground">Chưa có đề thi nào</div>
+            ) : (
+              <div className="space-y-3">
+                {tests.map((test) => (
                 <div
                   key={test.id}
                   className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-secondary/50 transition-all cursor-pointer"
@@ -204,8 +277,9 @@ const TestBuilder = () => {
                     <Download className="w-4 h-4" />
                   </Button>
                 </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

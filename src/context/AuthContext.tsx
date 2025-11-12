@@ -1,13 +1,17 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { fetchClient } from "../api/fetchClient";
-import { logout } from "../utils/tokenUtils"; // vẫn giữ để xóa token local nếu có
+import { logout } from "../utils/tokenUtils";
+import { useFirebaseAuth } from "../hooks/useFirebaseAuth";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "../config/firebase";
 
 interface User {
   id: string;
   name: string;
-  fullName:string
+  fullName: string;
   email: string;
   avatar?: string;
+  authProvider?: string;
 }
 
 interface AuthContextType {
@@ -22,30 +26,87 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const firebaseAuth = useFirebaseAuth();
 
   const API_BASE_URL = "https://gemini.veronlabs.com/bot5";
 
-  // 🔹 Khi app load → kiểm tra người dùng hiện tại
+  // 🔹 Lắng nghe thay đổi Firebase auth state
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
-          credentials: "include", 
-        });
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        // Nếu có Firebase user, verify với backend
+        try {
+          const idToken = await firebaseUser.getIdToken();
+          const response = await fetch(`${API_BASE_URL}/api/v1/auth/verify-firebase`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({ idToken })
+          });
 
-        if (res.ok) {
-          const data = await res.json();
-          setUser(data.user);
-        } else {
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.user) {
+              const userData = {
+                id: data.user._id,
+                name: data.user.userName || data.user.fullName || firebaseUser.displayName || '',
+                fullName: data.user.userName || data.user.fullName || firebaseUser.displayName || '',
+                email: data.user.email || firebaseUser.email || '',
+                avatar: data.user.avatar || firebaseUser.photoURL,
+                authProvider: data.user.authProvider
+              };
+              console.log('✅ Firebase auth sync successful:', userData);
+              setUser(userData);
+            } else {
+              console.warn('⚠️ Firebase verify response missing user data:', data);
+              setUser(null);
+            }
+          } else {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('❌ Firebase verify failed:', response.status, errorData);
+            setUser(null);
+          }
+        } catch (error) {
+          console.error("❌ Firebase auth sync failed:", error);
           setUser(null);
         }
-      } catch (err) {
-        console.error("Auth check failed:", err);
-        setUser(null);
-      } finally {
-        setLoading(false);
+      } else {
+        // Nếu không có Firebase user, kiểm tra JWT token
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
+            credentials: "include", 
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            if (data.data && data.data.user) {
+              const userData = {
+                id: data.data.user._id || data.data.user.id,
+                name: data.data.user.fullName || data.data.user.name || data.data.user.userName || '',
+                fullName: data.data.user.fullName || data.data.user.name || data.data.user.userName || '',
+                email: data.data.user.email || '',
+                avatar: data.data.user.avatar
+              };
+              console.log('✅ JWT auth check successful:', userData);
+              setUser(userData);
+            } else {
+              setUser(null);
+            }
+          } else {
+            setUser(null);
+          }
+        } catch (err) {
+          console.error("❌ Auth check failed:", err);
+          setUser(null);
+        }
       }
-    })();
+      
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   // 🔹 Đăng nhập
@@ -86,6 +147,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // 🔹 Đăng xuất
   const logoutUser = async () => {
     try {
+      // Logout từ Firebase nếu đang dùng Firebase auth
+      if (user?.authProvider && user.authProvider !== 'email') {
+        await firebaseAuth.logout();
+      }
+      
+      // Logout từ backend
       await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
         method: "POST",
         credentials: "include",

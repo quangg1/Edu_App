@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
@@ -8,49 +8,87 @@ import { useToast } from "../components/ui/use-toast";
 import { Badge } from "../components/ui/badge";
 import  Layout  from "../components/Layout";
 import LessonPlanDialog, { LessonPlanFormData } from "../components/LessonPlanDialog";
+
 interface TeachingMethod {
     id: string;
     title: string;
     description: string;
     example: string;
-  }
+}
+
+interface LessonPlan {
+  _id: string;
+  id?: string;
+  title: string;
+  chapter?: string;
+  grade?: { level: number; name: string };
+  subject?: { name: string; code: string };
+  status: string;
+  createdAt: string;
+  progress?: number;
+}
+
 const LessonPlanner = () => {
   const { toast } = useToast();
   const [selectedMethod, setSelectedMethod] = useState<TeachingMethod | null>(null);
   const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [lessons, setLessons] = useState([
-    {
-      id: "1",
-      title: "Phân số - Toán lớp 6",
-      subtitle: "Chương 2 - CTGDPT 2018",
-      grade: "Lớp 6",
-      subject: "Toán học",
-      date: "2 giờ trước",
-      status: "Đang soạn",
-      progress: 75,
-    },
-    {
-      id: "2",
-      title: "Quang hợp ở thực vật",
-      subtitle: "Sinh học lớp 10",
-      grade: "Lớp 10",
-      subject: "Sinh học",
-      date: "1 ngày trước",
-      status: "Hoàn thành",
-      progress: 100,
-    },
-    {
-      id: "3",
-      title: "Văn học Việt Nam hiện đại",
-      subtitle: "Ngữ văn lớp 11 - HK1",
-      grade: "Lớp 11",
-      subject: "Ngữ văn",
-      date: "3 ngày trước",
-      status: "Hoàn thành",
-      progress: 100,
-    },
-  ]);
+  const [lessons, setLessons] = useState<LessonPlan[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  const FRONTEND_API = 'https://gemini.veronlabs.com/bot5';
+  
+  // Fetch lesson plans from API
+  useEffect(() => {
+    const fetchLessonPlans = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${FRONTEND_API}/api/v1/lesson-plans`, {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            // Transform API data to component format
+            const transformed = result.data.map((lp: LessonPlan) => ({
+              id: lp._id || lp.id,
+              title: lp.title || "Giáo án không có tiêu đề",
+              subtitle: lp.chapter ? `Chương ${lp.chapter}` : "",
+              grade: lp.grade?.name || "Không xác định",
+              subject: lp.subject?.name || "Không xác định",
+              date: formatDate(lp.createdAt),
+              status: lp.status === 'completed' ? 'Hoàn thành' : 'Đang soạn',
+              progress: lp.status === 'completed' ? 100 : 75,
+            }));
+            setLessons(transformed);
+          }
+        } else {
+          console.warn('Không thể tải danh sách giáo án');
+        }
+      } catch (error) {
+        console.error('Lỗi khi tải danh sách giáo án:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchLessonPlans();
+  }, []);
+  
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 60) return `${diffMins} phút trước`;
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    if (diffDays < 7) return `${diffDays} ngày trước`;
+    return date.toLocaleDateString('vi-VN');
+  };
   const teachingMethods = [
     {
       id: "ctgdpt",
@@ -93,28 +131,42 @@ const LessonPlanner = () => {
   };
 
   const handleSubmitLesson = (data: LessonPlanFormData) => {
-    const newLesson = {
-      id: String(lessons.length + 1),
-      title: data.title,
-      subtitle: `${data.subject} ${data.grade} - ${data.method}`,
-      grade: `Lớp ${data.grade}`,
-      subject: data.subject,
-      date: "Vừa xong",
-      status: "Hoàn thành",
-      progress: 100,
-    };
-
-    setLessons([newLesson, ...lessons]);
+    // Reload lesson plans after creation (the save happens automatically in LessonPlanDialog)
+    setTimeout(() => {
+      const fetchLessonPlans = async () => {
+        try {
+          const response = await fetch(`${FRONTEND_API}/api/v1/lesson-plans`, {
+            credentials: 'include'
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.data) {
+              const transformed = result.data.map((lp: LessonPlan) => ({
+                id: lp._id || lp.id,
+                title: lp.title || "Giáo án không có tiêu đề",
+                subtitle: lp.chapter ? `Chương ${lp.chapter}` : "",
+                grade: lp.grade?.name || "Không xác định",
+                subject: lp.subject?.name || "Không xác định",
+                date: formatDate(lp.createdAt),
+                status: lp.status === 'completed' ? 'Hoàn thành' : 'Đang soạn',
+                progress: lp.status === 'completed' ? 100 : 75,
+              }));
+              setLessons(transformed);
+            }
+          }
+        } catch (error) {
+          console.error('Lỗi khi tải lại danh sách giáo án:', error);
+        }
+      };
+      
+      fetchLessonPlans();
+    }, 2000); // Wait 2 seconds for save to complete
     
     toast({
       title: "Tạo giáo án thành công!",
       description: `AI đã tạo giáo án "${data.title}" cho bạn.`,
     });
-
-    // Navigate to detail page
-    setTimeout(() => {
-      navigate(`/lesson-planner/${newLesson.id}`);
-    }, 500);
   };
 
   const lessonTypes = [
@@ -151,8 +203,8 @@ const LessonPlanner = () => {
 
   return (
     <Layout>
-    <DashboardLayout>
-      <div className="space-y-6">
+      <DashboardLayout>
+        <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
@@ -212,24 +264,24 @@ const LessonPlanner = () => {
             Chọn phương pháp dạy học
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {teachingMethods.map((method, index) => (
-                <Card
-                    key={index}
-                    className="card-elevated hover:border-primary/30 transition-all cursor-pointer"
-                    onClick={() => handleSelectMethod(method)}
-                >
-                    <CardContent className="p-6">
-                    <div className="flex items-start justify-between mb-3">
-                        <div className="p-2 rounded-lg bg-primary/10">
-                        <Sparkles className="w-6 h-6 text-primary" />
-                        </div>
-                        <Badge variant="secondary" className="text-xs">Chi tiết</Badge>
+            {teachingMethods.map((method, index) => (
+              <Card
+                key={index}
+                className="card-elevated hover:border-primary/30 transition-all cursor-pointer"
+                onClick={() => handleSelectMethod(method)}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <Sparkles className="w-6 h-6 text-primary" />
                     </div>
-                    <h3 className="font-semibold text-foreground mb-2">{method.title}</h3>
-                    <p className="text-sm text-muted-foreground">{method.description}</p>
-                    </CardContent>
-                </Card>
-                ))}
+                    <Badge variant="secondary" className="text-xs">Chi tiết</Badge>
+                  </div>
+                  <h3 className="font-semibold text-foreground mb-2">{method.title}</h3>
+                  <p className="text-sm text-muted-foreground">{method.description}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
 
@@ -267,48 +319,54 @@ const LessonPlanner = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {lessons.map((lesson) => (
-                <div
-                  key={lesson.id}
-                  className="p-4 rounded-lg border border-border hover:bg-secondary/50 transition-all cursor-pointer"
-                  onClick={() => navigate(`/lesson-planner/${lesson.id}`)}
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-primary/10">
-                        <BookOpen className="w-5 h-5 text-primary" />
+            {loading ? (
+              <div className="text-center py-4 text-muted-foreground">Đang tải...</div>
+            ) : lessons.length === 0 ? (
+              <div className="text-center py-4 text-muted-foreground">Chưa có giáo án nào</div>
+            ) : (
+              <div className="space-y-3">
+                {lessons.map((lesson) => (
+                  <div
+                    key={lesson.id}
+                    className="p-4 rounded-lg border border-border hover:bg-secondary/50 transition-all cursor-pointer"
+                    onClick={() => navigate(`/lesson-planner/${lesson.id}`)}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-primary/10">
+                          <BookOpen className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-foreground">{lesson.title}</h4>
+                          <p className="text-sm text-muted-foreground">{lesson.subtitle}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-semibold text-foreground">{lesson.title}</h4>
-                        <p className="text-sm text-muted-foreground">{lesson.subtitle}</p>
-                      </div>
+                      <Badge variant={lesson.status === "Hoàn thành" ? "default" : "secondary"}>
+                        {lesson.status}
+                      </Badge>
                     </div>
-                    <Badge variant={lesson.status === "Hoàn thành" ? "default" : "secondary"}>
-                      {lesson.status}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground ml-14 mb-2">
-                    <span>{lesson.grade}</span>
-                    <span>•</span>
-                    <span>{lesson.subject}</span>
-                    <span>•</span>
-                    <span>{lesson.date}</span>
-                  </div>
-                  {lesson.progress < 100 && (
-                    <div className="flex items-center gap-2 ml-14">
-                      <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-primary transition-all"
-                          style={{ width: `${lesson.progress}%` }}
-                        ></div>
-                      </div>
-                      <span className="text-xs text-muted-foreground">{lesson.progress}%</span>
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground ml-14 mb-2">
+                      <span>{lesson.grade}</span>
+                      <span>•</span>
+                      <span>{lesson.subject}</span>
+                      <span>•</span>
+                      <span>{lesson.date}</span>
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
+                    {lesson.progress < 100 && (
+                      <div className="flex items-center gap-2 ml-14">
+                        <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary transition-all"
+                            style={{ width: `${lesson.progress}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-xs text-muted-foreground">{lesson.progress}%</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -333,15 +391,15 @@ const LessonPlanner = () => {
             </div>
           </CardContent>
         </Card>
-      </div>
 
-      <LessonPlanDialog
-    open={dialogOpen}
-    onOpenChange={setDialogOpen}
-    onSubmit={handleSubmitLesson}
-    selectedMethod={selectedMethod}
-    />
-    </DashboardLayout>
+        <LessonPlanDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          onSubmit={handleSubmitLesson}
+          selectedMethod={selectedMethod}
+        />
+        </div>
+      </DashboardLayout>
     </Layout>
   );
 };

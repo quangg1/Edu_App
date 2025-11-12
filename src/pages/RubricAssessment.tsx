@@ -1,6 +1,7 @@
 // RubricAssessment.tsx
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
 import RubricDialog from "../components/RubricDialog"; 
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
@@ -10,6 +11,7 @@ import Layout from "../components/Layout";
 
 // Định nghĩa Rubric type
 interface Rubric {
+  _id?: string;
   id: string;
   name: string;
   subject: string;
@@ -21,48 +23,122 @@ interface Rubric {
   criteriaCount?: number;
   criteria?: any[];
   rubricTable?: any;
+  createdAt?: string;
+  grade?: { name: string };
+  assessmentType?: string;
+}
+
+interface RubricFromAPI {
+  _id: string;
+  title: string;
+  subject?: { name: string };
+  grade?: { name: string };
+  assessmentType?: string;
+  criteria?: any[];
+  createdAt: string;
+  status?: string;
 }
 
 const RubricAssessment = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const navigate = useNavigate();
+  const [rubrics, setRubrics] = useState<Rubric[]>([]);
+  const [loading, setLoading] = useState(true);
   
-  // Dữ liệu mock ban đầu
-  const [rubrics, setRubrics] = useState<Rubric[]>([
-    {
-      id: "1",
-      name: "Rubrics: Đánh giá dự án STEM lớp 8",
-      subject: "Khoa học tự nhiên",
-      date: "3 ngày trước",
-      students: 45,
-      progress: 100,
-    },
-    {
-      id: "2",
-      name: "Rubrics: Bài kiểm tra Hóa học 11",
-      subject: "Hóa học",
-      date: "1 tuần trước",
-      students: 30,
-      progress: 100,
-    },
-    {
-      id: "3",
-      name: "Rubrics: Thuyết trình Lịch sử địa phương",
-      subject: "Lịch sử",
-      date: "1 tháng trước",
-      students: 50,
-      progress: 100,
-    },
-  ]);
+  const FRONTEND_API = 'https://gemini.veronlabs.com/bot5';
+  
+  // Fetch rubrics from API
+  useEffect(() => {
+    const fetchRubrics = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${FRONTEND_API}/api/v1/rubrics`, {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            // Transform API data to component format
+            const transformed = result.data.map((rubric: RubricFromAPI) => ({
+              id: rubric._id,
+              name: rubric.title || "Thang đánh giá không có tiêu đề",
+              subject: rubric.subject?.name || "Không xác định",
+              date: formatDate(rubric.createdAt),
+              students: 0, // Not stored in DB yet
+              progress: rubric.status === 'published' ? 100 : 75,
+              type: rubric.assessmentType || 'presentation',
+              criteriaCount: rubric.criteria?.length || 0,
+              grade: rubric.grade?.name
+            }));
+            setRubrics(transformed);
+          }
+        } else {
+          console.warn('Không thể tải danh sách thang đánh giá');
+        }
+      } catch (error) {
+        console.error('Lỗi khi tải danh sách thang đánh giá:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchRubrics();
+  }, []);
+  
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 60) return `${diffMins} phút trước`;
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    if (diffDays < 7) return `${diffDays} ngày trước`;
+    return date.toLocaleDateString('vi-VN');
+  };
 
   // Hàm xử lý khi tạo mới một Rubric thành công
   const handleRubricCreated = (newRubric: Rubric) => {
-    // Thêm Rubric mới vào danh sách
-    setRubrics(prev => [newRubric, ...prev]);
+    // Reload rubrics after creation (the save happens automatically in RubricDialog)
+    setTimeout(() => {
+      const fetchRubrics = async () => {
+        try {
+          const response = await fetch(`${FRONTEND_API}/api/v1/rubrics`, {
+            credentials: 'include'
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.data) {
+              const transformed = result.data.map((rubric: RubricFromAPI) => ({
+                id: rubric._id,
+                name: rubric.title || "Thang đánh giá không có tiêu đề",
+                subject: rubric.subject?.name || "Không xác định",
+                date: formatDate(rubric.createdAt),
+                students: 0,
+                progress: rubric.status === 'published' ? 100 : 75,
+                type: rubric.assessmentType || 'presentation',
+                criteriaCount: rubric.criteria?.length || 0,
+                grade: rubric.grade?.name
+              }));
+              setRubrics(transformed);
+            }
+          }
+        } catch (error) {
+          console.error('Lỗi khi tải lại danh sách thang đánh giá:', error);
+        }
+      };
+      
+      fetchRubrics();
+    }, 2000); // Wait 2 seconds for save to complete
   };
 
   const handleRubricClick = (rubric: Rubric) => {
-    // TODO: Implement view details modal or expand functionality
-    console.log('View rubric details:', rubric);
+    // Navigate to detail page
+    navigate(`/rubric-assessment/${rubric.id}`);
   };
 
   // ... (Phần JSX giữ nguyên) ...
@@ -116,8 +192,13 @@ const RubricAssessment = () => {
             <CardTitle>Danh sách Rubrics</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {rubrics.map((rubric) => (
+            {loading ? (
+              <div className="text-center py-4 text-muted-foreground">Đang tải...</div>
+            ) : rubrics.length === 0 ? (
+              <div className="text-center py-4 text-muted-foreground">Chưa có thang đánh giá nào</div>
+            ) : (
+              <div className="space-y-4">
+                {rubrics.map((rubric) => (
                 <div
                   key={rubric.id}
                   className="flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-secondary/5 transition-colors"
@@ -144,8 +225,9 @@ const RubricAssessment = () => {
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

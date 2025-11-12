@@ -29,10 +29,6 @@ interface StreamEvent {
   download_url?: string;
 }
 
-interface StreamError extends Event {
-  error?: Error;
-  message?: string;
-}
 interface TeachingMethod {
     id: string;
     title: string;
@@ -155,6 +151,31 @@ const LessonPlanDialog = ({ open, onOpenChange, selectedMethod }: LessonPlanDial
                   const token = data.download_url.split('/').pop();
                   setDownloadToken(token || null);
                   setIsGenerating(false);
+                  
+                  // Tự động lưu vào database
+                  if (token) {
+                      const FRONTEND_API = 'https://gemini.veronlabs.com/bot5';
+                      fetch(`${FRONTEND_API}/api/v1/lesson-plans/save-from-token`, {
+                          method: 'POST',
+                          headers: {
+                              'Content-Type': 'application/json',
+                          },
+                          credentials: 'include',
+                          body: JSON.stringify({ token })
+                      })
+                      .then(res => res.json())
+                      .then(result => {
+                          if (result.success) {
+                              console.log('✅ Giáo án đã được lưu vào database:', result.lessonPlanId);
+                          } else {
+                              console.warn('⚠️ Không thể lưu giáo án:', result.message);
+                          }
+                      })
+                      .catch(err => {
+                          console.error('❌ Lỗi khi lưu giáo án:', err);
+                      });
+                  }
+                  
                   toast({
                       title: "Thành công",
                       description: "Giáo án đã được tạo xong!",

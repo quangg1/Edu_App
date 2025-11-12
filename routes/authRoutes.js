@@ -7,6 +7,7 @@ const { registerValidation, loginValidation, validate ,authLimiter } = require('
 router.post('/register', authLimiter, registerValidation, validate, authController.register);
 router.get('/verify-email',authLimiter, authController.verifyEmail);
 router.post('/login', authLimiter, loginValidation, validate, authController.login);
+router.post('/verify-firebase', authController.verifyFirebaseAuth);
 router.post('/logout', protect, authController.logout);
 router.post('/refresh-token', authController.refreshToken);
 router.post('/forgot-password', authLimiter, authController.forgotPassword);

@@ -14,13 +14,37 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: true,
+    required: function() {
+      // Password chỉ bắt buộc nếu không phải OAuth provider
+      return !this.firebaseUID;
+    },
     minlength: 8,
     validate: {
-      validator: (value) =>
-        /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(value),
+      validator: function(value) {
+        // Nếu có firebaseUID (OAuth), password không bắt buộc
+        if (this.firebaseUID) return true;
+        // Nếu không có firebaseUID, password phải tuân theo rule
+        return /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(value);
+      },
       message: 'Mật khẩu phải có ít nhất 8 ký tự, 1 chữ hoa, 1 số và 1 ký tự đặc biệt'
     }
+  },
+  // Firebase Authentication
+  firebaseUID: {
+    type: String,
+    unique: true,
+    sparse: true, // Cho phép null nhưng unique nếu có giá trị
+    index: true
+  },
+  authProvider: {
+    type: String,
+    enum: ['email', 'google', 'facebook'],
+    default: 'email'
+  },
+  providerData: {
+    providerId: String,
+    photoURL: String,
+    displayName: String
   },
   role: {
     type: String,
@@ -36,8 +60,12 @@ const userSchema = new mongoose.Schema({
   avatar: String,
   phone: {
     type: String,
-    required: true,
+    required: function() {
+      // Phone chỉ bắt buộc nếu không phải OAuth provider
+      return !this.firebaseUID;
+    },
     unique: true,
+    sparse: true, // Cho phép null nhưng unique nếu có giá trị
     match: [/^(0|\+84)(\d{9})$/, 'Số điện thoại không hợp lệ'] // strict VN
   },
   isActive: {
@@ -46,7 +74,10 @@ const userSchema = new mongoose.Schema({
   },
   isVerified: {
     type: Boolean,
-    default: false
+    default: function() {
+      // OAuth users được verify tự động
+      return !!this.firebaseUID;
+    }
   },
   emailVerifiedAt: Date,
   lastLogin: Date,

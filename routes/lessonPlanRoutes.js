@@ -5,6 +5,7 @@ const router = express.Router();
 const lessonPlanController = require('../controllers/lessonPlanController');
 const multer = require('multer'); 
 const path =require('path');
+const { authenticate } = require('../middlewares/firebaseAuth');
 // Lưu ý: authMiddleware KHÔNG được import vì bạn đang test
 const uploadDir = path.join(__dirname, '../uploads/temp');
 if (!fs.existsSync(uploadDir)) {
@@ -38,10 +39,14 @@ router.get(
   lessonPlanController.downloadLessonPlanByToken
 );
 
-// 3️⃣ LƯU GIÁO ÁN SAU KHI STREAM
+// 3️⃣ LƯU GIÁO ÁN SAU KHI STREAM (requires auth - Firebase or JWT)
 router.post(
   '/save-from-token',
+  authenticate,
   lessonPlanController.saveLessonPlanFromToken
 );
+
+// 4️⃣ LẤY DANH SÁCH GIÁO ÁN (requires auth - Firebase or JWT)
+router.get('/', authenticate, lessonPlanController.getLessonPlans);
 
 module.exports = router;

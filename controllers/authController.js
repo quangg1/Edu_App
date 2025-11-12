@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const bcrypt = require('bcryptjs');
 const generateTeacherCode = require('../utils/generateTeacherCode');
+const { verifyIdToken } = require('../config/firebase');
 const signToken = (id, usertype) => {
   return jwt.sign({ id, usertype }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || '15m' // Access token nên có hạn ngắn
@@ -457,6 +458,209 @@ exports.getMe = async (req, res, next) => {
       data: { user },
     });
   };
+
+// Xác thực Firebase token và sync với MongoDB
+exports.verifyFirebaseAuth = async (req, res) => {
+  try {
+    const { idToken } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'Thiếu Firebase ID token'
+      });
+    }
+
+    // Verify Firebase token
+    const decodedToken = await verifyIdToken(idToken);
+    console.log('🔍 Firebase token verified:', {
+      uid: decodedToken.uid,
+      email: decodedToken.email,
+      provider: decodedToken.firebase?.sign_in_provider
+    });
+    
+    // Tìm hoặc tạo user trong MongoDB
+    let user = await User.findOne({ firebaseUID: decodedToken.uid });
+    
+    if (!user) {
+      // Tìm theo email nếu chưa có firebaseUID
+      user = await User.findOne({ email: decodedToken.email });
+      
+      if (user) {
+        console.log('📎 Linking existing user with Firebase UID:', user._id);
+        // Link Firebase UID với user hiện có
+        user.firebaseUID = decodedToken.uid;
+        const provider = decodedToken.firebase?.sign_in_provider || 'password';
+        const providerMap = {
+          'google.com': 'google',
+          'facebook.com': 'facebook',
+          'password': 'email'
+        };
+        user.authProvider = providerMap[provider] || 'email';
+        user.isVerified = decodedToken.email_verified || user.isVerified;
+        user.emailVerifiedAt = decodedToken.email_verified ? new Date() : user.emailVerifiedAt;
+        
+        if (decodedToken.picture) {
+          user.avatar = decodedToken.picture;
+          user.providerData = {
+            providerId: provider,
+            photoURL: decodedToken.picture,
+            displayName: decodedToken.name || user.fullName
+          };
+        }
+        
+        await user.save({ validateBeforeSave: false });
+        console.log('✅ User linked with Firebase UID');
+      } else {
+        console.log('🆕 Creating new user from Firebase');
+        // Tạo user mới từ Firebase
+        const provider = decodedToken.firebase?.sign_in_provider || 'password';
+        const providerMap = {
+          'google.com': 'google',
+          'facebook.com': 'facebook',
+          'password': 'email'
+        };
+        
+        // Tạo user mới từ Firebase - không set phone để tránh duplicate key error
+        const newUserData = {
+          email: decodedToken.email,
+          firebaseUID: decodedToken.uid,
+          authProvider: providerMap[provider] || 'email',
+          fullName: decodedToken.name || decodedToken.email.split('@')[0],
+          avatar: decodedToken.picture || null,
+          isVerified: decodedToken.email_verified || false,
+          emailVerifiedAt: decodedToken.email_verified ? new Date() : null,
+          role: 'teacher', // Default role
+          providerData: {
+            providerId: provider,
+            photoURL: decodedToken.picture,
+            displayName: decodedToken.name
+          }
+        };
+        
+        // Chỉ set phone nếu có trong decodedToken (không set nếu null/undefined)
+        if (decodedToken.phone_number) {
+          newUserData.phone = decodedToken.phone_number;
+        }
+        // Không set phone field nếu không có - để tránh duplicate key error với null
+        
+        try {
+          user = await User.create(newUserData);
+          console.log('✅ New user created in MongoDB:', user._id);
+          console.log('   Email:', user.email);
+          console.log('   FirebaseUID:', user.firebaseUID);
+          const mongoose = require('mongoose');
+          console.log('   Database:', mongoose.connection.db?.databaseName || 'unknown');
+          
+          // Verify user was actually saved
+          const verifyUser = await User.findById(user._id);
+          if (verifyUser) {
+            console.log('   ✅ Verified: User exists in database');
+          } else {
+            console.error('   ❌ ERROR: User was not saved to database!');
+          }
+        } catch (createError) {
+          console.error('❌ Error creating user:', createError);
+          if (createError.code === 11000) {
+            // Duplicate key error - user might have been created by another request
+            console.log('⚠️ Duplicate key error, trying to find existing user...');
+            user = await User.findOne({ 
+              $or: [
+                { firebaseUID: decodedToken.uid },
+                { email: decodedToken.email }
+              ]
+            });
+            if (user) {
+              console.log('✅ Found existing user:', user._id);
+            } else {
+              throw createError;
+            }
+          } else {
+            throw createError;
+          }
+        }
+      }
+    } else {
+      console.log('👤 User already exists in MongoDB:', user._id);
+      console.log('   Email:', user.email);
+      console.log('   FirebaseUID:', user.firebaseUID);
+      console.log('   Database:', require('mongoose').connection.db?.databaseName || 'unknown');
+      // Cập nhật thông tin từ Firebase
+      if (decodedToken.email_verified && !user.isVerified) {
+        user.isVerified = true;
+        user.emailVerifiedAt = new Date();
+      }
+      
+      if (decodedToken.picture && decodedToken.picture !== user.avatar) {
+        user.avatar = decodedToken.picture;
+        if (user.providerData) {
+          user.providerData.photoURL = decodedToken.picture;
+          user.providerData.displayName = decodedToken.name || user.fullName;
+        }
+      }
+      
+      user.lastLogin = new Date();
+      await user.save({ validateBeforeSave: false });
+      console.log('✅ User info updated from Firebase');
+      
+      // Verify user was actually saved
+      const verifyUser = await User.findById(user._id);
+      if (verifyUser) {
+        console.log('   ✅ Verified: User exists in database after update');
+      } else {
+        console.error('   ❌ ERROR: User was not saved to database after update!');
+      }
+    }
+
+    // Tạo JWT token để tương thích với hệ thống hiện tại
+    const token = signToken(user._id, user.role);
+    const refreshToken = createRefreshToken();
+    const refreshTokenExpiresIn = 7 * 24 * 60 * 60 * 1000;
+
+    // Lọc token hết hạn
+    user.refreshTokens = user.refreshTokens.filter(t => t.expiresAt > new Date());
+    user.refreshTokens.push({
+      token: refreshToken,
+      expiresAt: new Date(Date.now() + refreshTokenExpiresIn)
+    });
+
+    const MAX_TOKENS = 5;
+    if (user.refreshTokens.length > MAX_TOKENS) {
+      user.refreshTokens = user.refreshTokens.slice(-MAX_TOKENS);
+    }
+
+    await user.save({ validateBeforeSave: false });
+
+    const accessTokenExpiresIn = 15 * 60 * 1000;
+    res.cookie('accessToken', token, getCookieOptions(accessTokenExpiresIn));
+    res.cookie('refreshToken', refreshToken, getCookieOptions(refreshTokenExpiresIn));
+    
+    console.log('✅ JWT cookies set for user:', user._id);
+
+    const userForFrontend = {
+      _id: user._id,
+      email: user.email,
+      userName: user.fullName,
+      phone: user.phone,
+      usertype: user.role,
+      avatar: user.avatar,
+      authProvider: user.authProvider
+    };
+
+    res.status(200).json({
+      success: true,
+      message: 'Xác thực Firebase thành công',
+      user: userForFrontend
+    });
+  } catch (error) {
+    console.error('❌ Lỗi verify Firebase auth:', error);
+    res.status(401).json({
+      success: false,
+      message: 'Token Firebase không hợp lệ',
+      error: error.message
+    });
+  }
+};
   exports.updateMe = async (req, res, next) => {
     // 1. Không cho update password ở route này
     if (req.body.password || req.body.passwordConfirm) {

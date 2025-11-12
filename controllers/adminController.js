@@ -2,7 +2,7 @@
 //const AcademicYear = require('../models/AcademicYear');
 //const Grade = require('../models/Grade');
 const Class = require('../models/Class');
-const Subject = require('../models/Subject');
+// const Subject = require('../models/Subject');
 //const TeachingAssignment = require('../models/TeachingAssignment');
 //const ActivityLog = require('../models/ActivityLog');
 
@@ -490,62 +490,62 @@ exports.getSubjects = async (req, res) => {
   }
 };
 
-exports.createSubject = async (req, res) => {
-  try {
-    const subject = await Subject.create(req.body);
+// exports.createSubject = async (req, res) => {
+//   try {
+//     const subject = await Subject.create(req.body);
 
-    res.status(201).json({
-      success: true,
-      message: 'Tạo môn học thành công',
-      data: subject
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi tạo môn học',
-      error: error.message
-    });
-  }
-};
+//     res.status(201).json({
+//       success: true,
+//       message: 'Tạo môn học thành công',
+//       data: subject
+//     });
+//   } catch (error) {
+//     res.status(500).json({
+//       success: false,
+//       message: 'Lỗi tạo môn học',
+//       error: error.message
+//     });
+//   }
+// };
 
-exports.updateSubject = async (req, res) => {
-  try {
-    const subject = await Subject.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
+// exports.updateSubject = async (req, res) => {
+//   try {
+//     const subject = await Subject.findByIdAndUpdate(
+//       req.params.id,
+//       req.body,
+//       { new: true, runValidators: true }
+//     );
 
-    res.json({
-      success: true,
-      message: 'Cập nhật môn học thành công',
-      data: subject
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi cập nhật môn học',
-      error: error.message
-    });
-  }
-};
+//     res.json({
+//       success: true,
+//       message: 'Cập nhật môn học thành công',
+//       data: subject
+//     });
+//   } catch (error) {
+//     res.status(500).json({
+//       success: false,
+//       message: 'Lỗi cập nhật môn học',
+//       error: error.message
+//     });
+//   }
+// };
 
-exports.deleteSubject = async (req, res) => {
-  try {
-    await Subject.findByIdAndDelete(req.params.id);
+// exports.deleteSubject = async (req, res) => {
+//   try {
+//     await Subject.findByIdAndDelete(req.params.id);
 
-    res.json({
-      success: true,
-      message: 'Xóa môn học thành công'
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi xóa môn học',
-      error: error.message
-    });
-  }
-};
+//     res.json({
+//       success: true,
+//       message: 'Xóa môn học thành công'
+//     });
+//   } catch (error) {
+//     res.status(500).json({
+//       success: false,
+//       message: 'Lỗi xóa môn học',
+//       error: error.message
+//     });
+//   }
+// };
 
 exports.getTeachingAssignments = async (req, res) => {
   try {

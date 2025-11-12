@@ -8,7 +8,7 @@ const authRoutes = require('./routes/authRoutes');
 const lessonPlanRoutes = require('./routes/lessonPlanRoutes');
 const quizRoutes = require('./routes/quizRoutes');
 const rubricRoutes = require('./routes/rubricRoutes');
-const adminRoutes = require('./routes/adminRoutes');
+// const adminRoutes = require('./routes/adminRoutes');
 const { errorHandler } = require('./middlewares/errorHandler');
 const { generalLimiter } = require('./middlewares/validation');
 const http = require('http');
@@ -24,6 +24,7 @@ app.set('timeout', 10 * 60 * 1000); // 10 minutes
 app.use(helmet());
 app.use(cors({
   origin: [
+    'http://localhost:5173',
     'https://edu-app-h2f9.onrender.com',
     'http://localhost:8006',
     'http://localhost:8007',
@@ -43,7 +44,7 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/lesson-plans', lessonPlanRoutes);
 app.use('/api/v1/quizzes', quizRoutes);
 app.use('/api/v1/rubrics', rubricRoutes);
-app.use('/api/v1/admin', adminRoutes);
+// app.use('/api/v1/admin', adminRoutes);
 
 // Health check
 app.get('/health', (req, res) => res.json({ status: 'OK', timestamp: new Date() }));

@@ -204,15 +204,46 @@ exports.saveLessonPlanFromToken = async (req, res) => {
         }
         
         // 2. Lưu vào CSDL
-        const userId = getUserId(req); 
-        const newLessonPlan = await LessonPlan.create({
-            user: userId, // Dùng User ID (thật hoặc mock)
-            title: lessonPlanData.title || "Giáo án AI mới",
-            content: lessonPlanData.content, 
-            metadata: lessonPlanData.metadata || {}, 
-            downloadToken: token, 
-            status: 'Hoàn thành'
+        const userId = getUserId(req);
+        
+        // Validate userId is a valid ObjectId
+        const mongoose = require('mongoose');
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            console.error('❌ Invalid userId:', userId);
+            return res.status(400).json({
+                success: false,
+                message: "User ID không hợp lệ"
+            });
+        }
+
+        console.log('📝 Saving lesson plan with:', {
+            userId,
+            title: lessonPlanData.title,
+            token
         });
+
+        const newLessonPlan = await LessonPlan.create({
+            teacher: {
+                id: userId
+            },
+            title: lessonPlanData.title || "Giáo án AI mới",
+            subject: {
+                name: lessonPlanData.metadata?.subject || "Không xác định",
+                code: lessonPlanData.metadata?.subject || ""
+            },
+            grade: {
+                level: lessonPlanData.metadata?.grade ? Number(lessonPlanData.metadata.grade) : null,
+                name: lessonPlanData.metadata?.grade ? `Lớp ${lessonPlanData.metadata.grade}` : null
+            },
+            notes: lessonPlanData.content || "",
+            isAIGenerated: true,
+            aiModel: 'Gemini-VeronLabs',
+            generationTime: new Date(),
+            status: 'completed',
+            downloadToken: token
+        });
+
+        console.log('✅ Lesson plan saved successfully:', newLessonPlan._id);
 
         // 3. Phản hồi thành công
         res.status(201).json({ 
@@ -222,7 +253,15 @@ exports.saveLessonPlanFromToken = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Lỗi khi lưu Lesson Plan từ token:', error.message);
+        console.error('❌ Lỗi khi lưu Lesson Plan từ token:', error);
+        console.error('   Error name:', error.name);
+        console.error('   Error message:', error.message);
+        if (error.errors) {
+            console.error('   Validation errors:', JSON.stringify(error.errors, null, 2));
+        }
+        if (error.stack) {
+            console.error('   Stack:', error.stack);
+        }
         
         let errorMessage = error.message;
         if (axios.isAxiosError(error) && error.response) {
@@ -234,7 +273,55 @@ exports.saveLessonPlanFromToken = async (req, res) => {
         res.status(500).json({ 
             success: false, 
             message: "Lỗi hệ thống khi lưu giáo án.", 
-            error: errorMessage 
+            error: errorMessage,
+            ...(process.env.NODE_ENV === 'development' && { 
+                details: error.errors || error.stack 
+            })
+        });
+    }
+};
+
+// Lấy danh sách lesson plans
+exports.getLessonPlans = async (req, res) => {
+    try {
+        const { page = 1, limit = 10, status, subject, grade, search } = req.query;
+        const query = {};
+
+        const userId = getUserId(req);
+        query['teacher.id'] = userId;
+
+        if (status) query.status = status;
+        if (subject) query['subject.name'] = { $regex: subject, $options: 'i' };
+        if (grade) query['grade.level'] = Number(grade);
+        if (search) {
+            query.$or = [
+                { title: { $regex: search, $options: 'i' } },
+                { chapter: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        const lessonPlans = await LessonPlan.find(query)
+            .sort({ createdAt: -1 })
+            .limit(limit * 1)
+            .skip((page - 1) * limit);
+
+        const count = await LessonPlan.countDocuments(query);
+
+        res.json({
+            success: true,
+            data: lessonPlans,
+            pagination: {
+                total: count,
+                page: parseInt(page),
+                pages: Math.ceil(count / limit)
+            }
+        });
+    } catch (error) {
+        console.error('❌ Lỗi lấy danh sách lesson plans:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi lấy danh sách giáo án',
+            error: error.message
         });
     }
 };

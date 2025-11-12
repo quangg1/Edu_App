@@ -4,9 +4,16 @@ const FormData = require("form-data");
 const fs = require("fs");
 const path = require("path");
 const fetch = require("node-fetch");
+const Rubric = require('../models/Rubric');
 
 // URL đến service FastAPI
-const AI_SERVICE_URL = "http://localhost:8004"; // Đổi lại nếu chạy ở server khác
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL || "http://localhost:8004";
+const TEST_USER_ID = '60c72b2f9c3c6f0015f8a123'; 
+
+// Hàm tiện ích lấy User ID hoặc Mock ID
+const getUserId = (req) => {
+    return req.user && req.user._id ? req.user._id : TEST_USER_ID;
+};
 
 /**
  * 🎯 Stream trực tiếp Rubric từ Gemini (SSE)
@@ -138,4 +145,208 @@ exports.downloadRubric = async (req, res) => {
       console.error("❌ Rubric download error:", error);
       res.status(500).json({ error: "Lỗi nội bộ máy chủ khi tải xuống file." });
   }
+};
+
+// Lưu Rubric vào database sau khi generation hoàn thành
+exports.saveRubric = async (req, res) => {
+    try {
+        const { 
+            title, 
+            subject, 
+            grade, 
+            assessmentType,
+            criteria,
+            description,
+            downloadToken
+        } = req.body;
+
+        if (!title || !criteria || !Array.isArray(criteria)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Thiếu thông tin bắt buộc: title, criteria" 
+            });
+        }
+
+        const userId = getUserId(req);
+        
+        // Validate userId is a valid ObjectId
+        const mongoose = require('mongoose');
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            console.error('❌ Invalid userId:', userId);
+            return res.status(400).json({
+                success: false,
+                message: "User ID không hợp lệ"
+            });
+        }
+
+        // Chuyển đổi criteria từ format AI sang format database
+        const formattedCriteria = criteria.map((c) => {
+            // Handle different criteria formats from AI
+            if (c.name && c.levels) {
+                // Already in correct format
+                return {
+                    name: c.name,
+                    description: c.description || '',
+                    weightPercent: c.weight_percent || c.weightPercent || 0,
+                    levels: (Array.isArray(c.levels) ? c.levels : []).map((level) => ({
+                        label: level.label || level.name || '',
+                        scoreRange: level.score_range || level.scoreRange || '',
+                        description: level.description || ''
+                    }))
+                };
+            } else if (c.criterion_name) {
+                // Alternative format
+                return {
+                    name: c.criterion_name,
+                    description: c.criterion_description || '',
+                    weightPercent: c.weight_percent || 0,
+                    levels: Array.isArray(c.levels) ? c.levels : []
+                };
+            } else {
+                // Fallback
+                return {
+                    name: c.name || JSON.stringify(c),
+                    description: c.description || '',
+                    weightPercent: c.weight_percent || 0,
+                    levels: []
+                };
+            }
+        });
+
+        console.log('📝 Saving rubric with:', {
+            userId,
+            title,
+            criteriaCount: formattedCriteria.length,
+            firstCriterion: formattedCriteria[0] ? {
+                name: formattedCriteria[0].name,
+                levelsCount: formattedCriteria[0].levels?.length || 0
+            } : null
+        });
+
+        const newRubric = await Rubric.create({
+            teacher: {
+                id: userId
+            },
+            subject: {
+                name: subject || "Không xác định",
+                code: subject || ""
+            },
+            grade: {
+                level: grade ? Number(grade) : null,
+                name: grade ? `Lớp ${grade}` : null
+            },
+            title: title,
+            description: description || '',
+            assessmentType: assessmentType || 'presentation',
+            criteria: formattedCriteria,
+            isAIGenerated: true,
+            aiModel: 'Gemini-VeronLabs',
+            generationTime: new Date(),
+            status: 'draft',
+            downloadToken: downloadToken
+        });
+
+        console.log('✅ Rubric saved successfully:', newRubric._id);
+
+        res.status(201).json({
+            success: true,
+            message: "Lưu thang đánh giá thành công!",
+            data: {
+                rubricId: newRubric._id,
+                title: newRubric.title,
+                criteriaCount: newRubric.criteria.length
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Lỗi khi lưu Rubric:', error);
+        console.error('   Error name:', error.name);
+        console.error('   Error message:', error.message);
+        if (error.errors) {
+            console.error('   Validation errors:', JSON.stringify(error.errors, null, 2));
+        }
+        if (error.stack) {
+            console.error('   Stack:', error.stack);
+        }
+        
+        res.status(500).json({
+            success: false,
+            message: "Lỗi hệ thống khi lưu thang đánh giá.",
+            error: error.message,
+            ...(process.env.NODE_ENV === 'development' && { 
+                details: error.errors || error.stack 
+            })
+        });
+    }
+};
+
+// Lấy danh sách rubrics
+exports.getRubrics = async (req, res) => {
+    try {
+        const { page = 1, limit = 10, status, subject, grade, search } = req.query;
+        const query = {};
+
+        const userId = getUserId(req);
+        query['teacher.id'] = userId;
+
+        if (status) query.status = status;
+        if (subject) query['subject.name'] = { $regex: subject, $options: 'i' };
+        if (grade) query['grade.level'] = Number(grade);
+        if (search) {
+            query.$or = [
+                { title: { $regex: search, $options: 'i' } },
+                { description: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        const rubrics = await Rubric.find(query)
+            .sort({ createdAt: -1 })
+            .limit(limit * 1)
+            .skip((page - 1) * limit)
+            .select('-criteria.levels'); // Hide detailed levels in list
+
+        const count = await Rubric.countDocuments(query);
+
+        res.json({
+            success: true,
+            data: rubrics,
+            pagination: {
+                total: count,
+                page: parseInt(page),
+                pages: Math.ceil(count / limit)
+            }
+        });
+    } catch (error) {
+        console.error('❌ Lỗi lấy danh sách rubrics:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi lấy danh sách thang đánh giá',
+            error: error.message
+        });
+    }
+};
+
+// Lấy chi tiết một rubric
+exports.getRubric = async (req, res) => {
+    try {
+        const rubric = await Rubric.findById(req.params.id);
+
+        if (!rubric) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy thang đánh giá'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: rubric
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi lấy thang đánh giá',
+            error: error.message
+        });
+    }
 };

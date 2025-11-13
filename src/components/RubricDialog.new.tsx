@@ -97,7 +97,7 @@ const RubricDialog = ({ open, onOpenChange, onRubricCreated }: RubricDialogProps
       form.append("user_prompt", formData.description);
       if (attachedFile) form.append("files", attachedFile);
   
-      const FRONTEND_API = "https://gemini.veronlabs.com/bot5";
+      const FRONTEND_API = import.meta.env.VITE_API_BASE_URL ;
   
       // 2️⃣ Gửi yêu cầu tạo job với timeout và CORS
       let createRes;

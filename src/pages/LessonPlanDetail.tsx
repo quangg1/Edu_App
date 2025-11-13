@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
@@ -6,98 +6,193 @@ import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Separator } from "../components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { ArrowLeft, Download, Edit, Share2, CheckCircle, Clock, Target, BookOpen, Lightbulb, Users } from "lucide-react";
+import { ArrowLeft, Download, Edit, Share2, CheckCircle, Clock, Target, BookOpen, Lightbulb, Users, Loader2 } from "lucide-react";
 import { useToast } from "../components/ui/use-toast";
+import { fetchClient } from "../api/fetchClient";
+import Layout from "../components/Layout";
+
+interface LessonPlan {
+  _id: string;
+  title: string;
+  chapter?: string;
+  subject?: { name: string; code: string };
+  grade?: { level: number; name: string };
+  status: string;
+  createdAt: string;
+  notes?: string;
+  objectives?: {
+    knowledge?: string[];
+    skills?: string[];
+    attitude?: string[];
+    competence?: string[];
+  };
+  activities?: any[];
+  materials?: string[];
+  assessmentCriteria?: any[];
+  downloadToken?: string;
+  downloadUrl?: string;
+}
 
 const LessonPlanDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
+  const [loading, setLoading] = useState(true);
+  const [lessonPlanData, setLessonPlanData] = useState<LessonPlan | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock data - in real app, fetch based on id
+  useEffect(() => {
+    const fetchLessonPlan = async () => {
+      if (!id) return;
+      
+      try {
+        setLoading(true);
+        const response = await fetchClient(`/api/v1/lesson-plans/${id}`, {
+          method: 'GET',
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            setLessonPlanData(result.data);
+          } else {
+            setError('Không tìm thấy giáo án');
+          }
+        } else {
+          setError('Không thể tải giáo án');
+        }
+      } catch (err) {
+        console.error('Error fetching lesson plan:', err);
+        setError('Lỗi khi tải giáo án');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLessonPlan();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <Layout>
+        <DashboardLayout>
+          <div className="flex items-center justify-center min-h-[400px]">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        </DashboardLayout>
+      </Layout>
+    );
+  }
+
+  if (error || !lessonPlanData) {
+    return (
+      <Layout>
+        <DashboardLayout>
+          <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+            <p className="text-muted-foreground">{error || 'Không tìm thấy giáo án'}</p>
+            <Button onClick={() => navigate("/lesson-planner")}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Quay lại
+            </Button>
+          </div>
+        </DashboardLayout>
+      </Layout>
+    );
+  }
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 60) return `${diffMins} phút trước`;
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    if (diffDays < 7) return `${diffDays} ngày trước`;
+    return date.toLocaleDateString('vi-VN');
+  };
+
+  // Transform data from API to display format
+  const allObjectives = [
+    ...(lessonPlanData.objectives?.knowledge || []),
+    ...(lessonPlanData.objectives?.skills || []),
+    ...(lessonPlanData.objectives?.attitude || []),
+    ...(lessonPlanData.objectives?.competence || [])
+  ];
+
+  const transformActivities = () => {
+    if (lessonPlanData.activities && lessonPlanData.activities.length > 0) {
+      const icons = [Lightbulb, BookOpen, Target, Users];
+      const colors = ["text-primary", "text-accent", "text-primary-light", "text-accent"];
+      return lessonPlanData.activities.map((activity: any, index: number) => ({
+        phase: activity.name || `Hoạt động ${index + 1}`,
+        icon: icons[index % icons.length],
+        color: colors[index % colors.length],
+        description: activity.goal || '',
+        activities: activity.steps ? [
+          activity.steps.assign,
+          activity.steps.perform,
+          activity.steps.report,
+          activity.steps.conclude
+        ].filter(Boolean) : []
+      }));
+    }
+    // Fallback: parse from notes if activities not structured
+    return [];
+  };
+
   const lessonPlan = {
-    id: id || "1",
-    title: "Phân số - Các phép tính với phân số",
-    subtitle: "Chương 2 - Toán học THCS",
-    grade: "Lớp 6",
-    subject: "Toán học",
+    id: lessonPlanData._id,
+    title: lessonPlanData.title || "Giáo án",
+    subtitle: lessonPlanData.chapter || "",
+    grade: lessonPlanData.grade?.name || "Không xác định",
+    subject: lessonPlanData.subject?.name || "Không xác định",
     method: "CTGDPT 2018",
-    duration: "45 phút",
-    createdAt: "2 giờ trước",
-    status: "Hoàn thành",
-    objectives: [
-      "Hiểu được khái niệm phân số và ý nghĩa của phân số trong thực tế",
-      "Biết cách thực hiện các phép tính cộng, trừ, nhân, chia phân số",
-      "Vận dụng được kiến thức về phân số vào giải quyết các bài toán thực tế",
+    duration: `${lessonPlanData.num_periods || 1} tiết`,
+    createdAt: formatDate(lessonPlanData.createdAt),
+    status: lessonPlanData.status === 'completed' ? 'Hoàn thành' : 
+            lessonPlanData.status === 'draft' ? 'Nháp' : 
+            lessonPlanData.status === 'approved' ? 'Đã duyệt' : 'Lưu trữ',
+    objectives: allObjectives.length > 0 ? allObjectives : [
+      "Mục tiêu sẽ được cập nhật từ nội dung giáo án"
     ],
-    competencies: [
+    competencies: lessonPlanData.learningOutcomes?.general?.map((comp: string) => ({
+      name: comp,
+      level: "Tốt"
+    })) || [
       { name: "Năng lực tính toán", level: "Tốt" },
-      { name: "Năng lực giải quyết vấn đề", level: "Khá" },
-      { name: "Năng lực tư duy logic", level: "Tốt" },
+      { name: "Năng lực giải quyết vấn đề", level: "Khá" }
     ],
-    activities: [
-      {
-        phase: "Khởi động (5 phút)",
-        icon: Lightbulb,
-        color: "text-primary",
-        description: "Giới thiệu tình huống thực tế về chia bánh, chia đồ vật",
-        activities: [
-          "Đặt câu hỏi kích thích tư duy: 'Làm thế nào chia đều 3 chiếc bánh cho 4 bạn?'",
-          "Quan sát, lắng nghe ý kiến của học sinh",
-        ],
-      },
-      {
-        phase: "Hình thành kiến thức (25 phút)",
-        icon: BookOpen,
-        color: "text-accent",
-        description: "Xây dựng khái niệm phân số và các phép tính",
-        activities: [
-          "Hoạt động nhóm: Thảo luận về cách biểu diễn phân số",
-          "Thực hành: Thực hiện các phép tính cơ bản với phân số",
-          "Giáo viên hướng dẫn, chốt kiến thức trọng tâm",
-        ],
-      },
-      {
-        phase: "Luyện tập (10 phút)",
-        icon: Target,
-        color: "text-primary-light",
-        description: "Củng cố kiến thức qua bài tập",
-        activities: [
-          "Bài tập cá nhân: 3 bài tập từ dễ đến khó",
-          "Bài tập nhóm: Giải quyết tình huống thực tế",
-        ],
-      },
-      {
-        phase: "Vận dụng & Tổng kết (5 phút)",
-        icon: Users,
-        color: "text-accent",
-        description: "Liên hệ thực tế và tổng kết bài học",
-        activities: [
-          "Chia sẻ ứng dụng của phân số trong đời sống",
-          "Nhận xét, đánh giá quá trình học tập",
-          "Giao bài tập về nhà",
-        ],
-      },
+    activities: transformActivities(),
+    materials: lessonPlanData.materials || [],
+    assessment: lessonPlanData.assessmentCriteria?.map((crit: any) => 
+      `${crit.criterion}: ${crit.method} (${crit.level})`
+    ) || [
+      "Đánh giá quá trình: Quan sát thái độ học tập",
+      "Đánh giá kết quả: Bài tập trên lớp"
     ],
-    materials: [
-      "Bảng phụ về biểu diễn phân số",
-      "Mô hình trực quan (hình tròn, hình vuông chia phần)",
-      "Phiếu học tập cho học sinh",
-      "Máy chiếu và slide bài giảng",
-    ],
-    assessment: [
-      "Đánh giá quá trình: Quan sát thái độ học tập, tham gia hoạt động nhóm",
-      "Đánh giá kết quả: Bài tập trên lớp và bài tập về nhà",
-      "Tự đánh giá: Học sinh tự nhận xét mức độ hiểu bài",
-    ],
+    notes: lessonPlanData.notes || '',
+    downloadToken: lessonPlanData.downloadToken,
+    downloadUrl: lessonPlanData.downloadUrl
   };
 
   const handleDownload = () => {
-    toast({
-      title: "Đang tải xuống",
-      description: "Giáo án sẽ được tải xuống dạng PDF...",
-    });
+    if (lessonPlan.downloadToken) {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+      const downloadUrl = `${API_BASE_URL}/api/v1/lesson-plans/download/${lessonPlan.downloadToken}`;
+      window.open(downloadUrl, '_blank');
+    } else if (lessonPlan.downloadUrl) {
+      window.open(lessonPlan.downloadUrl, '_blank');
+    } else {
+      toast({
+        title: "Đang tải xuống",
+        description: "Giáo án sẽ được tải xuống dạng PDF...",
+      });
+    }
   };
 
   const handleShare = () => {
@@ -115,6 +210,7 @@ const LessonPlanDetail = () => {
   };
 
   return (
+    <Layout>
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
@@ -207,11 +303,12 @@ const LessonPlanDetail = () => {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className={`grid w-full ${lessonPlan.notes ? 'grid-cols-5' : 'grid-cols-4'}`}>
             <TabsTrigger value="overview">Tổng quan</TabsTrigger>
             <TabsTrigger value="activities">Hoạt động học tập</TabsTrigger>
             <TabsTrigger value="materials">Tài liệu & Đánh giá</TabsTrigger>
             <TabsTrigger value="competencies">Năng lực</TabsTrigger>
+            {lessonPlan.notes && <TabsTrigger value="content">Nội dung</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -341,9 +438,26 @@ const LessonPlanDetail = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {lessonPlan.notes && (
+            <TabsContent value="content">
+              <Card className="card-elevated">
+                <CardHeader>
+                  <CardTitle>Nội dung giáo án</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div 
+                    className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap"
+                    dangerouslySetInnerHTML={{ __html: lessonPlan.notes }}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </DashboardLayout>
+    </Layout>
   );
 };
 

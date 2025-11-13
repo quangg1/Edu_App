@@ -8,6 +8,7 @@ import { Loader2, Sparkles, Upload, FileText, X, Download } from "lucide-react";
 import { Card } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { useToast } from "./ui/use-toast";
+import { fetchClient } from "../api/fetchClient";
 
 export interface LessonPlanFormData {
   type: 'k12' | 'kindergarten' | 'custom';
@@ -47,8 +48,10 @@ const LessonPlanDialog = ({ open, onOpenChange, selectedMethod }: LessonPlanDial
     const [activeTab, setActiveTab] = useState("form");
     const [file, setFile] = useState<File | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [streamMeta, setStreamMeta] = useState<any>(null); // Store meta data from stream
     const [streamOutput, setStreamOutput] = useState("");
     const [downloadToken, setDownloadToken] = useState<string | null>(null);
+    const [streamContent, setStreamContent] = useState<any>({}); // Store full stream content for saving
     const abortControllerRef = useRef<AbortController | null>(null);
 
     const [formData, setFormData] = useState<LessonPlanFormData>({
@@ -82,6 +85,8 @@ const LessonPlanDialog = ({ open, onOpenChange, selectedMethod }: LessonPlanDial
             setActiveTab("form");
             setStreamOutput("");
             setDownloadToken(null);
+            setStreamContent({});
+            setStreamMeta(null);
             if (abortControllerRef.current) {
                 abortControllerRef.current.abort();
                 abortControllerRef.current = null;
@@ -130,6 +135,7 @@ const LessonPlanDialog = ({ open, onOpenChange, selectedMethod }: LessonPlanDial
               break;
           case 'meta':
               if (data.subject && data.grade && data.lesson_title) {
+                  setStreamMeta(data); // Store meta data for UI display
                   setStreamOutput(prev => prev + `\n[Thông tin] Môn: ${data.subject}, Lớp: ${data.grade}, Bài: ${data.lesson_title}\n`);
               }
               break;
@@ -143,45 +149,22 @@ const LessonPlanDialog = ({ open, onOpenChange, selectedMethod }: LessonPlanDial
           case 'add_items':
           case 'add_table':
               if (data.html) {
+                  // Store content for UI display only (actual save uses collected local data)
+                  setStreamContent((prev: any) => ({
+                      ...prev,
+                      [eventType]: data.html
+                  }));
                   setStreamOutput(prev => prev + `\n${data.html}\n`);
               }
               break;
           case 'final':
-              if (data.download_url) {
-                  const token = data.download_url.split('/').pop();
-                  setDownloadToken(token || null);
-                  setIsGenerating(false);
-                  
-                  // Tự động lưu vào database
-                  if (token) {
-                      const FRONTEND_API = 'https://gemini.veronlabs.com/bot5';
-                      fetch(`${FRONTEND_API}/api/v1/lesson-plans/save-from-token`, {
-                          method: 'POST',
-                          headers: {
-                              'Content-Type': 'application/json',
-                          },
-                          credentials: 'include',
-                          body: JSON.stringify({ token })
-                      })
-                      .then(res => res.json())
-                      .then(result => {
-                          if (result.success) {
-                              console.log('✅ Giáo án đã được lưu vào database:', result.lessonPlanId);
-                          } else {
-                              console.warn('⚠️ Không thể lưu giáo án:', result.message);
-                          }
-                      })
-                      .catch(err => {
-                          console.error('❌ Lỗi khi lưu giáo án:', err);
-                      });
-                  }
-                  
-                  toast({
-                      title: "Thành công",
-                      description: "Giáo án đã được tạo xong!",
-                      variant: "default"
-                  });
-              }
+              // ✅ Final event handling - SAVE NOW DONE IN handleFormSubmit after stream completes
+              // Just display success message
+              toast({
+                  title: "Thành công",
+                  description: "Giáo án đã được tạo xong!",
+                  variant: "default"
+              });
               break;
           case 'error': // Xử lý lỗi từ stream
               setIsGenerating(false);
@@ -200,6 +183,7 @@ const LessonPlanDialog = ({ open, onOpenChange, selectedMethod }: LessonPlanDial
     setActiveTab('result');
     setStreamOutput('');
     setDownloadToken(null);
+    setStreamContent({}); // Reset stream content at start
   
     // 1. Khởi tạo AbortController để cho phép hủy POST request
     const controller = new AbortController();
@@ -227,16 +211,17 @@ const LessonPlanDialog = ({ open, onOpenChange, selectedMethod }: LessonPlanDial
         }
   
         // 3. THỰC HIỆN POST REQUEST VÀ ĐỌC STREAM TRỰC TIẾP
-        let endpoint = 'https://gemini.veronlabs.com/bot5/api/v1/lesson-plans/stream';
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ;
+        let endpoint = `${API_BASE_URL}/api/v1/lesson-plans/stream`;
         switch (formData.type) {
           case 'kindergarten':
-            endpoint = 'https://gemini.veronlabs.com/bot5/api/v1/lesson-plans/stream?type=kindergarten';
+            endpoint = `${API_BASE_URL}/api/v1/lesson-plans/stream?type=kindergarten`;
             break;
           case 'custom':
-            endpoint = 'https://gemini.veronlabs.com/bot5/api/v1/lesson-plans/stream?type=custom';
+            endpoint = `${API_BASE_URL}/api/v1/lesson-plans/stream?type=custom`;
             break;
           default:
-            endpoint = 'https://gemini.veronlabs.com/bot5/api/v1/lesson-plans/stream?type=k12';
+            endpoint = `${API_BASE_URL}/api/v1/lesson-plans/stream?type=k12`;
             break;
         }
 
@@ -255,6 +240,9 @@ const LessonPlanDialog = ({ open, onOpenChange, selectedMethod }: LessonPlanDial
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
         let buffer = ""; // Buffer để lưu trữ các chunk chưa hoàn chỉnh
+        let collectedContent: any = {}; // Store content locally during stream processing
+        let collectedMeta: any = null; // Store metadata locally
+        let finalDownloadUrl: string | null = null; // Store final download URL
   
         while (true) {
             const { done, value } = await reader.read();
@@ -289,7 +277,20 @@ const LessonPlanDialog = ({ open, onOpenChange, selectedMethod }: LessonPlanDial
                 if (eventType && dataString) {
                     try {
                         const data = JSON.parse(dataString);
-                        // Gọi hàm xử lý đã được tái cấu trúc
+                        
+                        // Collect data locally first (not via state) for save operation
+                        if (eventType === 'meta' && data.subject && data.grade && data.lesson_title) {
+                            collectedMeta = data;
+                        } else if (['objectives', 'resources', 'start_activity', 'knowledge_formation_activity', 
+                                    'practice_activity', 'extend_activity', 'add_para', 'add_items', 'add_table'].includes(eventType)) {
+                            if (data.html) {
+                                collectedContent[eventType] = data.html;
+                            }
+                        } else if (eventType === 'final' && data.download_url) {
+                            finalDownloadUrl = data.download_url;
+                        }
+                        
+                        // Update UI via state
                         processStreamEvent(eventType, data as StreamEvent); 
                     } catch (err) {
                         console.error(`Error parsing data for event ${eventType}:`, err);
@@ -298,8 +299,70 @@ const LessonPlanDialog = ({ open, onOpenChange, selectedMethod }: LessonPlanDial
             }
         }
         
-        // Stream kết thúc bình thường
+        // 5. STREAM KẾT THÚC - LƯUGIÁO ÁN VỚI COLLECTED DATA
         setIsGenerating(false);
+        
+        if (finalDownloadUrl) {
+            const token = finalDownloadUrl.split('/').pop();
+            setDownloadToken(token || null);
+            
+            if (token) {
+                // Use collected data, not state (to avoid async timing issues)
+                const saveTitle = collectedMeta?.lesson_title || formData.title || "Giáo án AI";
+                
+                console.log('💾 Auto-saving with collected stream content:', {
+                    title: saveTitle,
+                    contentEvents: Object.keys(collectedContent),
+                    hasMeta: !!collectedMeta
+                });
+                
+                fetchClient(`/api/v1/lesson-plans/save`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        title: saveTitle,
+                        subject: collectedMeta?.subject || formData.subject || "Không xác định",
+                        grade: {
+                            level: collectedMeta?.grade || (formData.grade ? parseInt(formData.grade.replace(/\D/g, ''), 10) : 10),
+                            name: collectedMeta?.grade ? `Lớp ${collectedMeta.grade}` : formData.grade
+                        },
+                        downloadToken: token,
+                        downloadUrl: finalDownloadUrl,
+                        streamContent: collectedContent,  // ✅ Use collected local data
+                        notes: formData.objectives || ""
+                    })
+                })
+                .then(res => res.json())
+                .then(result => {
+                    if (result.success) {
+                        console.log('✅ Giáo án đã được lưu vào database:', result.data?.lessonPlanId);
+                        toast({
+                            title: "Thành công",
+                            description: `Giáo án "${saveTitle}" đã được lưu!`,
+                            variant: "default"
+                        });
+                    } else {
+                        console.warn('⚠️ Không thể lưu giáo án:', result.message);
+                        toast({
+                            title: "Cảnh báo",
+                            description: result.message || "Không thể lưu giáo án",
+                            variant: "default"
+                        });
+                    }
+                })
+                .catch(err => {
+                    console.error('❌ Lỗi khi lưu giáo án:', err);
+                    toast({
+                        title: "Lỗi",
+                        description: "Có lỗi xảy ra khi lưu giáo án",
+                        variant: "destructive"
+                    });
+                });
+            }
+        }
   
     } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') {
@@ -321,7 +384,8 @@ const LessonPlanDialog = ({ open, onOpenChange, selectedMethod }: LessonPlanDial
 
   const handleDownload = useCallback(() => {
     if (downloadToken) {
-      const downloadUrl = `https://gemini.veronlabs.com/bot5/api/v1/lesson-plans/download/${downloadToken}`;
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ;
+      const downloadUrl = `${API_BASE_URL}/api/v1/lesson-plans/download/${downloadToken}`;
       // Tạo thẻ a ẩn để kiểm soát download tốt hơn
       const link = document.createElement('a');
       link.href = downloadUrl;

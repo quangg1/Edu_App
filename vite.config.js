@@ -6,13 +6,11 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "https://gemini.veronlabs.com/bot5",
+        target: "http://localhost:8005",
         changeOrigin: true,
         secure: false,
         ws: true,
-        // ❌ Sai: (path: string)
-        // ✅ Đúng:
-        rewrite: (path) => path.replace(/^\/api/, ""),
+        rewrite: (path) => path,
       },
     },
     fs: {

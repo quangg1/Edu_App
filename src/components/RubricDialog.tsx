@@ -12,6 +12,7 @@ import { useToast } from "../hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Badge } from "../components/ui/badge";
 import { Loader2, Upload, FileText, X, Target, Download } from "lucide-react";
+import { fetchClient } from "../api/fetchClient";
 
 // Định nghĩa Interface Rubric (nên đồng bộ với RubricDetail.tsx)
 interface RubricLevel {
@@ -63,6 +64,20 @@ interface RubricDialogProps {
   onOpenChange: (open: boolean) => void;
   onRubricCreated?: (rubric: Rubric) => void;
 }
+
+// Mapping từ Vietnamese display text sang English enum values
+const TYPE_MAPPING: Record<string, string> = {
+  "Thuyết trình": "presentation",
+  "Báo cáo": "report",
+  "Dự án": "project",
+  "Bài kiểm tra": "test"
+};
+
+// Extract grade level from "Lớp X" format
+const extractGradeLevel = (gradeText: string): number => {
+  const match = gradeText.match(/\d+/);
+  return match ? parseInt(match[0], 10) : 10;
+};
 
 const RubricDialog = ({ open, onOpenChange, onRubricCreated }: RubricDialogProps) => {
   const { toast } = useToast();
@@ -128,7 +143,8 @@ const RubricDialog = ({ open, onOpenChange, onRubricCreated }: RubricDialogProps
   const handleDownload = useCallback(() => {
     if (!downloadToken) return;
     
-    const downloadUrl = `https://gemini.veronlabs.com/bot5/api/v1/rubrics/download/${downloadToken}`;
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ;
+    const downloadUrl = `${API_BASE_URL}/api/v1/rubrics/download/${downloadToken}`;
     const link = document.createElement('a');
     
     // 1. THỰC HIỆN FETCH ĐỂ LẤY BLOB
@@ -227,8 +243,10 @@ const RubricDialog = ({ open, onOpenChange, onRubricCreated }: RubricDialogProps
             
             // Tự động lưu vào database
             if (finalRubricDataRef.current.criteria && finalRubricDataRef.current.criteria.length > 0) {
-              const FRONTEND_API = 'https://gemini.veronlabs.com/bot5';
-              fetch(`${FRONTEND_API}/api/v1/rubrics/save`, {
+              const gradeLevel = extractGradeLevel(formData.grade);
+              const assessmentTypeEnglish = TYPE_MAPPING[formData.type] || "test";
+              
+              fetchClient(`/api/v1/rubrics/save`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
@@ -237,8 +255,11 @@ const RubricDialog = ({ open, onOpenChange, onRubricCreated }: RubricDialogProps
                 body: JSON.stringify({
                   title: formData.title,
                   subject: formData.subject,
-                  grade: formData.grade,
-                  assessmentType: formData.type,
+                  grade: {
+                    level: gradeLevel,
+                    name: formData.grade
+                  },
+                  assessmentType: assessmentTypeEnglish,
                   criteria: finalRubricDataRef.current.criteria,
                   description: formData.description,
                   downloadToken: token
@@ -339,7 +360,8 @@ const RubricDialog = ({ open, onOpenChange, onRubricCreated }: RubricDialogProps
       if (formData.description) form.append("user_prompt", formData.description);
       if (attachedFile) form.append("files", attachedFile, attachedFile.name);
 
-      const response = await fetch("https://gemini.veronlabs.com/bot5/api/v1/rubrics/stream", {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ;
+      const response = await fetch(`${API_BASE_URL}/api/v1/rubrics/stream`, {
         method: "POST",
         body: form,
         signal: controller.signal,

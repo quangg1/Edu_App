@@ -28,7 +28,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const firebaseAuth = useFirebaseAuth();
 
-  const API_BASE_URL = "https://gemini.veronlabs.com/bot5";
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ;
 
   // 🔹 Lắng nghe thay đổi Firebase auth state
   useEffect(() => {

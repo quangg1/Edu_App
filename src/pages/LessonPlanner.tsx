@@ -3,11 +3,12 @@ import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { BookOpen, Plus, Sparkles, BookMarked, FileCheck, Clock } from "lucide-react";
+import { BookOpen, Plus, Sparkles, BookMarked, FileCheck, Clock, Eye, Trash2 } from "lucide-react";
 import { useToast } from "../components/ui/use-toast";
 import { Badge } from "../components/ui/badge";
 import  Layout  from "../components/Layout";
-import LessonPlanDialog, { LessonPlanFormData } from "../components/LessonPlanDialog";
+import LessonPlanDialog from "../components/LessonPlanDialog";
+import { fetchClient } from "../api/fetchClient";
 
 interface TeachingMethod {
     id: string;
@@ -36,14 +37,13 @@ const LessonPlanner = () => {
   const [lessons, setLessons] = useState<LessonPlan[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const FRONTEND_API = 'https://gemini.veronlabs.com/bot5';
-  
   // Fetch lesson plans from API
   useEffect(() => {
     const fetchLessonPlans = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${FRONTEND_API}/api/v1/lesson-plans`, {
+        const response = await fetchClient(`/api/v1/lesson-plans`, {
+          method: 'GET',
           credentials: 'include'
         });
         
@@ -130,43 +130,40 @@ const LessonPlanner = () => {
     setDialogOpen(true);
   };
 
-  const handleSubmitLesson = (data: LessonPlanFormData) => {
-    // Reload lesson plans after creation (the save happens automatically in LessonPlanDialog)
-    setTimeout(() => {
-      const fetchLessonPlans = async () => {
-        try {
-          const response = await fetch(`${FRONTEND_API}/api/v1/lesson-plans`, {
-            credentials: 'include'
+  const handleDeleteLesson = async (lessonId: string) => {
+    if (!confirm('Bạn có chắc muốn xóa giáo án này?')) return;
+
+    try {
+      const response = await fetchClient(`/api/v1/lesson-plans/${lessonId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        // Reload lessons after deletion
+        const result = await response.json();
+        if (result.success) {
+          setLessons(lessons.filter(l => (l.id || l._id) !== lessonId));
+          toast({
+            title: "Thành công",
+            description: "Giáo án đã được xóa",
           });
-          
-          if (response.ok) {
-            const result = await response.json();
-            if (result.success && result.data) {
-              const transformed = result.data.map((lp: LessonPlan) => ({
-                id: lp._id || lp.id,
-                title: lp.title || "Giáo án không có tiêu đề",
-                subtitle: lp.chapter ? `Chương ${lp.chapter}` : "",
-                grade: lp.grade?.name || "Không xác định",
-                subject: lp.subject?.name || "Không xác định",
-                date: formatDate(lp.createdAt),
-                status: lp.status === 'completed' ? 'Hoàn thành' : 'Đang soạn',
-                progress: lp.status === 'completed' ? 100 : 75,
-              }));
-              setLessons(transformed);
-            }
-          }
-        } catch (error) {
-          console.error('Lỗi khi tải lại danh sách giáo án:', error);
         }
-      };
-      
-      fetchLessonPlans();
-    }, 2000); // Wait 2 seconds for save to complete
-    
-    toast({
-      title: "Tạo giáo án thành công!",
-      description: `AI đã tạo giáo án "${data.title}" cho bạn.`,
-    });
+      } else {
+        toast({
+          title: "Lỗi",
+          description: "Không thể xóa giáo án",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast({
+        title: "Lỗi",
+        description: "Có lỗi xảy ra khi xóa giáo án",
+        variant: "destructive",
+      });
+    }
   };
 
   const lessonTypes = [
@@ -328,41 +325,63 @@ const LessonPlanner = () => {
                 {lessons.map((lesson) => (
                   <div
                     key={lesson.id}
-                    className="p-4 rounded-lg border border-border hover:bg-secondary/50 transition-all cursor-pointer"
-                    onClick={() => navigate(`/lesson-planner/${lesson.id}`)}
+                    className="p-4 rounded-lg border border-border hover:bg-secondary/50 transition-all flex items-center justify-between"
                   >
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-primary/10">
-                          <BookOpen className="w-5 h-5 text-primary" />
+                    <div 
+                      className="flex-1 cursor-pointer"
+                      onClick={() => navigate(`/lesson-planner/${lesson.id}`)}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-primary/10">
+                            <BookOpen className="w-5 h-5 text-primary" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-foreground">{lesson.title}</h4>
+                            <p className="text-sm text-muted-foreground">{(lesson as any).subtitle}</p>
+                          </div>
                         </div>
-                        <div>
-                          <h4 className="font-semibold text-foreground">{lesson.title}</h4>
-                          <p className="text-sm text-muted-foreground">{lesson.subtitle}</p>
-                        </div>
+                        <Badge variant={(lesson as any).status === "Hoàn thành" ? "default" : "secondary"}>
+                          {(lesson as any).status}
+                        </Badge>
                       </div>
-                      <Badge variant={lesson.status === "Hoàn thành" ? "default" : "secondary"}>
-                        {lesson.status}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground ml-14 mb-2">
-                      <span>{lesson.grade}</span>
-                      <span>•</span>
-                      <span>{lesson.subject}</span>
-                      <span>•</span>
-                      <span>{lesson.date}</span>
-                    </div>
-                    {lesson.progress < 100 && (
-                      <div className="flex items-center gap-2 ml-14">
-                        <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-primary transition-all"
-                            style={{ width: `${lesson.progress}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-xs text-muted-foreground">{lesson.progress}%</span>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground ml-14 mb-2">
+                        <span>{lesson.grade?.name}</span>
+                        <span>•</span>
+                        <span>{lesson.subject?.name}</span>
+                        <span>•</span>
+                        <span>{(lesson as any).date}</span>
                       </div>
-                    )}
+                      {((lesson as any).progress || 0) < 100 && (
+                        <div className="flex items-center gap-2 ml-14">
+                          <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-primary transition-all"
+                              style={{ width: `${(lesson as any).progress || 0}%` }}
+                            ></div>
+                          </div>
+                          <span className="text-xs text-muted-foreground">{(lesson as any).progress || 0}%</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 ml-4">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => navigate(`/lesson-planner/${lesson.id}`)}
+                        title="Xem chi tiết"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDeleteLesson(lesson.id || lesson._id)}
+                        title="Xóa giáo án"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -395,7 +414,6 @@ const LessonPlanner = () => {
         <LessonPlanDialog
           open={dialogOpen}
           onOpenChange={setDialogOpen}
-          onSubmit={handleSubmitLesson}
           selectedMethod={selectedMethod}
         />
         </div>

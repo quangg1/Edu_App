@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
 import ShareDialog from "../components/ShareDialog";
@@ -7,81 +7,186 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { ArrowLeft, Download, Share2, FileText, Clock, Target, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Download, Share2, FileText, Clock, Target, CheckCircle2, Loader2 } from "lucide-react";
+import { fetchClient } from "../api/fetchClient";
+import { useToast } from "../hooks/use-toast";
+import Layout from "../components/Layout";
+import MarkdownRenderer from '../components/MarkdownRenderer';
+interface Quiz {
+  _id: string;
+  title: string;
+  subject?: { name: string; code: string };
+  grade?: { level: number; name: string };
+  questions: any[];
+  settings?: { timeLimit: number };
+  createdAt: string;
+  difficulty?: string;
+  downloadUrl?: string;
+  downloadToken?: string;
+}
 
 const TestDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [quiz, setQuiz] = useState<Quiz | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock data - in real app, fetch based on id
-  const test = {
-    id,
-    title: "Đề kiểm tra Toán học lớp 10 - HK1",
-    subject: "Toán học",
-    grade: "Lớp 10",
-    type: "Kết hợp",
-    questionCount: 25,
-    duration: 90,
-    difficulty: "Trung bình",
-    topics: "Phương trình bậc hai, Hàm số bậc nhất, Đồ thị hàm số",
-    createdAt: "2 ngày trước",
+  useEffect(() => {
+    const fetchQuiz = async () => {
+      if (!id) return;
+      
+      try {
+        setLoading(true);
+        const response = await fetchClient(`/api/v1/quizzes/${id}`, {
+          method: 'GET',
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            setQuiz(result.data);
+          } else {
+            setError('Không tìm thấy đề thi');
+          }
+        } else {
+          setError('Không thể tải đề thi');
+        }
+      } catch (err) {
+        console.error('Error fetching quiz:', err);
+        setError('Lỗi khi tải đề thi');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQuiz();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <Layout>
+        <DashboardLayout>
+          <div className="flex items-center justify-center min-h-[400px]">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        </DashboardLayout>
+      </Layout>
+    );
+  }
+
+  if (error || !quiz) {
+    return (
+      <Layout>
+        <DashboardLayout>
+          <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+            <p className="text-muted-foreground">{error || 'Không tìm thấy đề thi'}</p>
+            <Button onClick={() => navigate("/test-builder")}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Quay lại
+            </Button>
+          </div>
+        </DashboardLayout>
+      </Layout>
+    );
+  }
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 60) return `${diffMins} phút trước`;
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    if (diffDays < 7) return `${diffDays} ngày trước`;
+    return date.toLocaleDateString('vi-VN');
   };
 
-  const questions = [
-    {
-      section: "Phần I: Trắc nghiệm (15 câu - 6 điểm)",
-      items: [
-        {
-          id: 1,
-          question: "Nghiệm của phương trình x² - 5x + 6 = 0 là:",
-          options: ["A. x = 2, x = 3", "B. x = 1, x = 6", "C. x = -2, x = -3", "D. x = 2, x = -3"],
-          correctAnswer: "A",
-          points: 0.4,
-        },
-        {
-          id: 2,
-          question: "Tập xác định của hàm số y = √(x - 2) là:",
-          options: ["A. (-∞, 2]", "B. [2, +∞)", "C. (-∞, 2)", "D. (2, +∞)"],
-          correctAnswer: "B",
-          points: 0.4,
-        },
-        {
-          id: 3,
-          question: "Đồ thị hàm số y = 2x + 1 đi qua điểm nào sau đây?",
-          options: ["A. (0, 1)", "B. (1, 2)", "C. (-1, 1)", "D. (2, 4)"],
-          correctAnswer: "A",
-          points: 0.4,
-        },
-      ],
-    },
-    {
-      section: "Phần II: Tự luận (5 câu - 4 điểm)",
-      items: [
-        {
-          id: 16,
-          question: "Giải phương trình: x² - 4x + 3 = 0",
-          rubric: "Viết công thức nghiệm (0.5đ), Tính delta (0.5đ), Tìm nghiệm (1đ)",
-          points: 2,
-        },
-        {
-          id: 17,
-          question: "Vẽ đồ thị hàm số y = -x + 2 trên mặt phẳng tọa độ Oxy",
-          rubric: "Tìm điểm đặc biệt (0.5đ), Vẽ đồ thị chính xác (1đ), Kết luận (0.5đ)",
-          points: 2,
-        },
-      ],
-    },
-  ];
+  // Transform questions from database format to display format
+  const transformQuestions = () => {
+    if (!quiz.questions || quiz.questions.length === 0) return [];
 
-  const answerKey = [
-    { question: 1, answer: "A", explanation: "Phân tích x² - 5x + 6 = (x-2)(x-3) = 0" },
-    { question: 2, answer: "B", explanation: "Căn bậc hai xác định khi x - 2 ≥ 0" },
-    { question: 3, answer: "A", explanation: "Thay x=0 vào y = 2x + 1, ta được y = 1" },
-  ];
+    const sections: any[] = [];
+    const multipleChoice: any[] = [];
+    const essay: any[] = [];
+
+    quiz.questions.forEach((q: any, index: number) => {
+      const questionItem = {
+        id: q.questionNumber || index + 1,
+        question: q.questionText || '',
+        options: q.options?.map((opt: any) => {
+          if (typeof opt === 'object' && opt.optionKey && opt.optionText) {
+            return `${opt.optionKey}. ${opt.optionText}`;
+          }
+          return String(opt);
+        }) || [],
+        correctAnswer: q.correctAnswer,
+        explanation: q.explanation || '',
+        points: 1,
+        difficulty: q.difficulty || 'medium'
+      };
+
+      if (q.questionType === 'multiple-choice' || q.questionType === 'true-false') {
+        multipleChoice.push(questionItem);
+      } else {
+        essay.push(questionItem);
+      }
+    });
+
+    if (multipleChoice.length > 0) {
+      sections.push({
+        section: `Phần I: Trắc nghiệm (${multipleChoice.length} câu)`,
+        items: multipleChoice
+      });
+    }
+
+    if (essay.length > 0) {
+      sections.push({
+        section: `Phần II: Tự luận (${essay.length} câu)`,
+        items: essay.map(item => ({
+          ...item,
+          rubric: item.explanation || 'Chưa có hướng dẫn chấm'
+        }))
+      });
+    }
+
+    return sections;
+  };
+
+  const questions = transformQuestions();
+  const test = {
+    id: quiz._id,
+    title: quiz.title,
+    subject: quiz.subject?.name || "Không xác định",
+    grade: quiz.grade?.name || "Không xác định",
+    type: "Trắc nghiệm",
+    questionCount: quiz.questions?.length || 0,
+    duration: quiz.settings?.timeLimit || 45,
+    difficulty: quiz.difficulty || "Trung bình",
+    createdAt: formatDate(quiz.createdAt),
+    downloadUrl: quiz.downloadUrl
+  };
+
+  // Generate answer key from questions
+  const answerKey = questions.flatMap(section => 
+    section.items
+      .filter((item: any) => item.correctAnswer)
+      .map((item: any) => ({
+        question: item.id,
+        answer: item.correctAnswer,
+        explanation: item.explanation || 'Chưa có giải thích'
+      }))
+  );
 
   return (
+    <Layout>
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
@@ -109,10 +214,16 @@ const TestDetail = () => {
             </Button>
             <Button 
               className="gap-2"
-              onClick={() => setExportDialogOpen(true)}
+              onClick={() => {
+                if (test.downloadUrl) {
+                  window.open(test.downloadUrl, '_blank');
+                } else {
+                  setExportDialogOpen(true);
+                }
+              }}
             >
               <Download className="w-4 h-4" />
-              Xuất PDF
+              {test.downloadUrl ? 'Tải xuống' : 'Xuất PDF'}
             </Button>
           </div>
         </div>
@@ -197,18 +308,21 @@ const TestDetail = () => {
                         <Badge variant="outline">Câu {item.id}</Badge>
                         <Badge variant="secondary">{item.points} điểm</Badge>
                       </div>
-                      <p className="font-medium text-foreground mb-3">{item.question}</p>
+                      <MarkdownRenderer content={item.question} className="font-medium text-foreground mb-3" />
                       {'options' in item && (
                         <div className="space-y-2 ml-6">
                           {item.options.map((option, i) => (
-                            <p key={i} className="text-sm text-muted-foreground">{option}</p>
+                            <p key={i} className="text-sm text-muted-foreground">
+                            <MarkdownRenderer content={option} className="inline" inline={true} />
+                            </p>
                           ))}
                         </div>
                       )}
                       {'rubric' in item && (
                         <div className="ml-6 p-3 bg-secondary/50 rounded-lg">
                           <p className="text-sm text-muted-foreground">
-                            <span className="font-semibold text-foreground">Hướng dẫn chấm:</span> {item.rubric}
+                          <span className="font-semibold text-foreground">Hướng dẫn chấm:</span>
+                          <MarkdownRenderer content={item.rubric} className="inline" inline={true} />
                           </p>
                         </div>
                       )}
@@ -231,7 +345,11 @@ const TestDetail = () => {
                       <Badge>Câu {item.question}</Badge>
                       <Badge variant="default">Đáp án: {item.answer}</Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground">{item.explanation}</p>
+                    <MarkdownRenderer 
+                      content={item.explanation} 
+                      className="text-sm text-muted-foreground" 
+                      inline={true} 
+                    />
                   </div>
                 ))}
               </CardContent>
@@ -307,6 +425,7 @@ const TestDetail = () => {
         testTitle={test.title}
       />
     </DashboardLayout>
+    </Layout>
   );
 };
 

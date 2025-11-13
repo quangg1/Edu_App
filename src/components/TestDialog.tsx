@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import Flashcard from "./FlashCard";
+import { fetchClient } from "../api/fetchClient";
 
 // Types
 type Question = {
@@ -81,7 +82,13 @@ const initialState: FormState = {
   percentage: 70,
 };
 
-const TestDialog = ({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) => {
+interface TestDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSave?: () => void;
+}
+
+const TestDialog = ({ open, onOpenChange, onSave }: TestDialogProps) => {
   // --- State cho quy trình (wizard) ---
   const [step, setStep] = useState<number>(1); // 1: Content, 2: Config
   const [loading, setLoading] = useState<boolean>(false);
@@ -90,6 +97,7 @@ const TestDialog = ({ open, onOpenChange }: { open: boolean; onOpenChange: (open
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormState>(initialState);
   const [progress, setProgress] = useState<string>('');
+  const [exporting, setExporting] = useState<boolean>(false);
 
 
 
@@ -127,7 +135,7 @@ const TestDialog = ({ open, onOpenChange }: { open: boolean; onOpenChange: (open
   const isStep1Valid = !!formData.file || formData.text_content.trim().length > 0;
 
   // --- Hàm gọi API ---
-  const FRONTEND_API = "https://gemini.veronlabs.com/bot5"
+  const FRONTEND_API = import.meta.env.VITE_API_BASE_URL ;
   
   const handleGenerate = async () => {
     if (!isStep1Valid) {
@@ -198,8 +206,8 @@ const TestDialog = ({ open, onOpenChange }: { open: boolean; onOpenChange: (open
         credentials: 'include',
         headers: {
           'Accept': 'text/event-stream',
-          'Origin': 'https://gemini.veronlabs.com',
-          'Referer': 'https://gemini.veronlabs.com/',
+          'Origin': window.location.origin,
+          'Referer': window.location.origin + '/',
         }
       });
 
@@ -274,7 +282,9 @@ const TestDialog = ({ open, onOpenChange }: { open: boolean; onOpenChange: (open
                       
                       // Tự động lưu vào database
                       if (data.detail.questions && data.detail.questions.length > 0) {
-                        fetch(`${FRONTEND_API}/api/v1/quizzes/save`, {
+                        const gradeLevel = Number(data.detail.grade || formData.grade) || 10;
+                        
+                        fetchClient(`/api/v1/quizzes/save`, {
                           method: 'POST',
                           headers: {
                             'Content-Type': 'application/json',
@@ -283,7 +293,10 @@ const TestDialog = ({ open, onOpenChange }: { open: boolean; onOpenChange: (open
                           body: JSON.stringify({
                             title: data.detail.name || formData.name || "Đề thi AI",
                             subject: data.detail.subject || formData.subject,
-                            grade: data.detail.grade || formData.grade,
+                            grade: {
+                              level: gradeLevel,
+                              name: `Lớp ${gradeLevel}`
+                            },
                             questions: data.detail.questions,
                             timeLimit: data.detail.time_limit || formData.time_limit,
                             difficulty: data.detail.difficulty || formData.difficulty,
@@ -295,6 +308,44 @@ const TestDialog = ({ open, onOpenChange }: { open: boolean; onOpenChange: (open
                         .then(result => {
                           if (result.success) {
                             console.log('✅ Đề thi đã được lưu vào database:', result.data.quizId);
+                            
+                            // Auto-export DOCX sau khi save
+                            console.log('📥 Đang xuất file DOCX...');
+                            fetchClient(`/api/v1/quizzes/export-docx`, {
+                              method: 'POST',
+                              credentials: 'include',
+                              body: JSON.stringify({
+                                name: data.detail.name || formData.name || "Đề thi AI",
+                                subject: data.detail.subject || formData.subject,
+                                grade: gradeLevel,
+                                time_limit: data.detail.time_limit || formData.time_limit,
+                                difficulty: data.detail.difficulty || formData.difficulty,
+                                questions: data.detail.questions,
+                                num_questions: data.detail.question_count || data.detail.questions.length
+                              })
+                            })
+                            .then(res => res.json())
+                            .then(exportResult => {
+                              if (exportResult.success && exportResult.data?.download_url) {
+                                const downloadUrl = exportResult.data.download_url.startsWith("http")
+                                  ? exportResult.data.download_url
+                                  : `${FRONTEND_API}${exportResult.data.download_url}`;
+                                setDownloadUrl(downloadUrl);
+                                console.log('✅ File DOCX đã được tạo:', downloadUrl);
+                              } else {
+                                console.warn('⚠️ Không thể xuất DOCX:', exportResult.message);
+                              }
+                            })
+                            .catch(err => {
+                              console.error('❌ Lỗi xuất DOCX:', err);
+                            });
+
+                            // Reload danh sách sau khi save thành công
+                            if (onSave) {
+                              setTimeout(() => {
+                                onSave();
+                              }, 500);
+                            }
                           } else {
                             console.warn('⚠️ Không thể lưu đề thi:', result.message);
                           }
@@ -333,7 +384,55 @@ const TestDialog = ({ open, onOpenChange }: { open: boolean; onOpenChange: (open
       reader?.cancel();
     }
   };
-  
+
+  // Hàm export DOCX
+  const handleExportDocx = async () => {
+    if (!quizResult || !quizResult.questions) {
+      setError("Không có dữ liệu đề thi để xuất");
+      return;
+    }
+
+    setExporting(true);
+    try {
+      // Step 1: Gọi API export-docx
+      const exportResponse = await fetchClient(`/api/v1/quizzes/export-docx`, {
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify(quizResult)
+      });
+
+      const exportData = await exportResponse.json();
+      
+      if (!exportData.success) {
+        setError(exportData.message || "Lỗi xuất file");
+        setExporting(false);
+        return;
+      }
+
+      // Step 2: Tải file về
+      const downloadUrl = exportData.data?.download_url;
+      if (downloadUrl) {
+        const fullUrl = downloadUrl.startsWith('http')
+          ? downloadUrl
+          : `${FRONTEND_API}${downloadUrl}`;
+        
+        // Tạo link tạm và download
+        const link = document.createElement('a');
+        link.href = fullUrl;
+        link.download = exportData.data?.filename || `${quizResult.name || 'quiz'}.docx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+    } catch (err) {
+      const error = err as Error;
+      console.error("❌ Lỗi xuất DOCX:", error);
+      setError(error.message || "Lỗi khi xuất file");
+    } finally {
+      setExporting(false);
+    }
+  };
   
 
   // --- Render nội dung dựa trên trạng thái ---
@@ -567,14 +666,33 @@ const TestDialog = ({ open, onOpenChange }: { open: boolean; onOpenChange: (open
         </div>
         
         {/* Footer - Cố định ở dưới cùng */}
-        {quizResult && downloadUrl && ( // CHỈ HIỂN THỊ KHI CÓ KẾT QUẢ
-             <DialogFooter className="bg-background py-4 px-6 border-t shadow-md"> {/* LOẠI BỎ 'sticky bottom-0' */}
-               <Button asChild className="w-full sm:w-auto">
-                 <a href={downloadUrl} download className="flex items-center justify-center">
-                   <Download className="w-5 h-5 mr-2" />
-                   Tải file DOCX
-                 </a>
+        {quizResult && ( // CHỈ HIỂN THỊ KHI CÓ KẾT QUẢ
+             <DialogFooter className="bg-background py-4 px-6 border-t shadow-md gap-2"> {/* LOẠI BỎ 'sticky bottom-0' */}
+               <Button 
+                 onClick={handleExportDocx} 
+                 disabled={exporting}
+                 className="w-full sm:w-auto flex items-center justify-center"
+               >
+                 {exporting ? (
+                   <>
+                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                     Đang xuất...
+                   </>
+                 ) : (
+                   <>
+                     <Download className="w-5 h-5 mr-2" />
+                     Xuất DOCX
+                   </>
+                 )}
                </Button>
+               {downloadUrl && (
+                 <Button asChild variant="outline" className="w-full sm:w-auto">
+                   <a href={downloadUrl} download className="flex items-center justify-center">
+                     <Download className="w-5 h-5 mr-2" />
+                     Tải file ngay
+                   </a>
+                 </Button>
+               )}
              </DialogFooter>
         )}
       </DialogContent>

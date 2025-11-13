@@ -8,7 +8,7 @@ import {
 } from 'firebase/auth';
 import { auth, googleProvider, facebookProvider } from '../config/firebase';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://gemini.veronlabs.com/bot5';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 /**
  * Hook để sử dụng Firebase Authentication

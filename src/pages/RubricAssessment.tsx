@@ -6,8 +6,9 @@ import DashboardLayout from "../components/DashboardLayout";
 import RubricDialog from "../components/RubricDialog"; 
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { Target, Plus, FileCheck, Users, TrendingUp } from "lucide-react";
+import { Target, Plus, FileCheck, Users, TrendingUp, Eye, Trash2 } from "lucide-react";
 import Layout from "../components/Layout";
+import { fetchClient } from "../api/fetchClient";
 
 // Định nghĩa Rubric type
 interface Rubric {
@@ -45,14 +46,13 @@ const RubricAssessment = () => {
   const [rubrics, setRubrics] = useState<Rubric[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const FRONTEND_API = 'https://gemini.veronlabs.com/bot5';
-  
   // Fetch rubrics from API
   useEffect(() => {
     const fetchRubrics = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${FRONTEND_API}/api/v1/rubrics`, {
+        const response = await fetchClient(`/api/v1/rubrics`, {
+          method: 'GET',
           credentials: 'include'
         });
         
@@ -101,12 +101,13 @@ const RubricAssessment = () => {
   };
 
   // Hàm xử lý khi tạo mới một Rubric thành công
-  const handleRubricCreated = (newRubric: Rubric) => {
+  const handleRubricCreated = () => {
     // Reload rubrics after creation (the save happens automatically in RubricDialog)
     setTimeout(() => {
       const fetchRubrics = async () => {
         try {
-          const response = await fetch(`${FRONTEND_API}/api/v1/rubrics`, {
+          const response = await fetchClient(`/api/v1/rubrics`, {
+            method: 'GET',
             credentials: 'include'
           });
           
@@ -139,6 +140,27 @@ const RubricAssessment = () => {
   const handleRubricClick = (rubric: Rubric) => {
     // Navigate to detail page
     navigate(`/rubric-assessment/${rubric.id}`);
+  };
+
+  const handleDeleteRubric = async (rubricId: string) => {
+    if (!confirm('Bạn có chắc muốn xóa thang đánh giá này?')) return;
+
+    try {
+      const response = await fetchClient(`/api/v1/rubrics/${rubricId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        // Reload rubrics after deletion
+        const result = await response.json();
+        if (result.success) {
+          setRubrics(rubrics.filter(r => r.id !== rubricId));
+        }
+      }
+    } catch (err) {
+      console.error('Delete error:', err);
+    }
   };
 
   // ... (Phần JSX giữ nguyên) ...
@@ -201,10 +223,12 @@ const RubricAssessment = () => {
                 {rubrics.map((rubric) => (
                 <div
                   key={rubric.id}
-                  className="flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-secondary/5 transition-colors"
-                  onClick={() => handleRubricClick(rubric)}
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-secondary/5 transition-colors"
                 >
-                  <div className="flex items-center gap-3 flex-1">
+                  <div 
+                    className="flex items-center gap-3 flex-1 cursor-pointer"
+                    onClick={() => handleRubricClick(rubric)}
+                  >
                     <div className="p-2 rounded-lg bg-primary/10">
                       <Target className="w-5 h-5 text-primary" />
                     </div>
@@ -223,6 +247,24 @@ const RubricAssessment = () => {
                         <span className="text-xs text-muted-foreground">{rubric.progress}%</span>
                       </div>
                     </div>
+                  </div>
+                  <div className="flex items-center gap-2 ml-4">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleRubricClick(rubric)}
+                      title="Xem chi tiết"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleDeleteRubric(rubric.id)}
+                      title="Xóa thang đánh giá"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
                 ))}

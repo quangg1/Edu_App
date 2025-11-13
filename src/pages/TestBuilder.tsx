@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../components/DashboardLayout";
-import TestDialog, { TestFormData } from "../components/TestDialog";
+import TestDialog from "../components/TestDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { FileText, Plus, BookOpen, CheckSquare, Download, Clock, Target } from "lucide-react";
 import { useToast } from "../hooks/use-toast";
 import Layout from "../components/Layout";
+import { fetchClient } from "../api/fetchClient";
 
 interface Quiz {
   _id: string;
@@ -41,14 +42,13 @@ const TestBuilder = () => {
 >([]);
   const [loading, setLoading] = useState(true);
   
-  const FRONTEND_API = 'https://gemini.veronlabs.com/bot5';
-  
   // Fetch quizzes from API
   useEffect(() => {
     const fetchQuizzes = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${FRONTEND_API}/api/v1/quizzes`, {
+        const response = await fetchClient(`/api/v1/quizzes`, {
+          method: 'GET',
           credentials: 'include'
         });
         
@@ -101,42 +101,35 @@ const TestBuilder = () => {
     setDialogOpen(true);
   };
 
-  const handleSubmitTest = async (data: TestFormData) => {
-    // Reload quizzes after creation (the save happens automatically in TestDialog)
-    setTimeout(() => {
-      const fetchQuizzes = async () => {
-        try {
-          const response = await fetch(`${FRONTEND_API}/api/v1/quizzes`, {
-            credentials: 'include'
-          });
-          
-          if (response.ok) {
-            const result = await response.json();
-            if (result.success && result.data) {
-              const transformed = result.data.map((quiz: Quiz) => ({
-                id: quiz._id || quiz.id,
-                name: quiz.title || "Đề thi không có tiêu đề",
-                subject: quiz.subject?.name || "Không xác định",
-                grade: quiz.grade?.name || "Không xác định",
-                type: "Trắc nghiệm",
-                difficulty: quiz.difficulty || "Medium",
-                questions: quiz.questions || [],
-                duration: quiz.settings?.timeLimit || 45,
-                questionCount: quiz.questions?.length || 0,
-                date: formatDate(quiz.createdAt)
-              }));
-              setTests(transformed);
-            }
-          }
-        } catch (error) {
-          console.error('Lỗi khi tải lại danh sách đề thi:', error);
-        }
-      };
+  const reloadQuizzes = async () => {
+    try {
+      const response = await fetchClient(`/api/v1/quizzes`, {
+        method: 'GET',
+        credentials: 'include'
+      });
       
-      fetchQuizzes();
-    }, 2000); // Wait 2 seconds for save to complete
-    
-    toast({ title: "Đề kiểm tra đã được tạo thành công!" });
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          const transformed = result.data.map((quiz: Quiz) => ({
+            id: quiz._id || quiz.id,
+            name: quiz.title || "Đề thi không có tiêu đề",
+            subject: quiz.subject?.name || "Không xác định",
+            grade: quiz.grade?.name || "Không xác định",
+            type: "Trắc nghiệm",
+            difficulty: quiz.difficulty || "Medium",
+            questions: quiz.questions || [],
+            duration: quiz.settings?.timeLimit || 45,
+            questionCount: quiz.questions?.length || 0,
+            date: formatDate(quiz.createdAt)
+          }));
+          setTests(transformed);
+          toast({ title: "Danh sách đề thi đã được cập nhật!" });
+        }
+      }
+    } catch (error) {
+      console.error('Lỗi khi tải lại danh sách đề thi:', error);
+    }
   };
 
   const testTypes = [
@@ -162,7 +155,7 @@ const TestBuilder = () => {
 
   const stats = [
     { label: "Đề đã tạo", value: tests.length, icon: FileText, color: "text-primary" },
-    { label: "Tổng câu hỏi", value: tests.reduce((sum, t) => sum + t.questions, 0), icon: Target, color: "text-accent" },
+    { label: "Tổng câu hỏi", value: tests.reduce((sum, t) => sum + (t.questionCount || 0), 0), icon: Target, color: "text-accent" },
   ];
 
   return (
@@ -260,7 +253,7 @@ const TestBuilder = () => {
                       <div className="flex items-center gap-3 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Target className="w-3 h-3" />
-                          {test.questions} câu
+                          {test.questionCount} câu
                         </span>
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
@@ -287,7 +280,7 @@ const TestBuilder = () => {
       <TestDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        onSubmit={handleSubmitTest}
+        onSave={reloadQuizzes}
       />
     </DashboardLayout>
     </Layout>
